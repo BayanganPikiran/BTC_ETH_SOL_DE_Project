@@ -2,7 +2,7 @@ import requests
 import logging
 import pandas as pd
 import time
-import datetime
+from datetime import datetime
 from dotenv import load_dotenv
 import os
 
@@ -38,11 +38,14 @@ def validate_data(data):
     return all(key in data for key in required_keys)
 
 
-def fetch_data(fsym, tsym, end_date=None, limit=2000):
+def fetch_data(crypto, fsym, tsym, end_date=None, limit=2000):
     """
-    Fetch historical OHLCV (open, high, low, close, volume) data for a specified cryptocurrency from the CryptoCompare API.
+    Fetch historical OHLCV (open, high, low, close, volume) data for a specified
+     cryptocurrency from the CryptoCompare API.
 
-    The function fetches data daily from the specified start date to the end date. It handles pagination automatically to retrieve data beyond the API's single-call limit and includes a retry mechanism for handling request failures.
+    The function fetches data daily from the specified start date to the end date.
+    It handles pagination automatically to retrieve data beyond the API's single-call
+     limit and includes a retry mechanism for handling request failures.
 
     Parameters:
     - crypto (str): Symbol of the cryptocurrency (e.g., 'BTC', 'ETH', 'SOL').
@@ -56,6 +59,13 @@ def fetch_data(fsym, tsym, end_date=None, limit=2000):
     Raises:
     - Exception: If the maximum number of retries is exceeded during API requests.
     """
+    # Validate start_date and end_date
+    if start_date is None:
+        raise ValueError("start_date cannot be None")
+
+    if end_date is None:
+        end_date = datetime.now().strftime('%Y-%m-%d')  # Set default end_date to current date if not provided
+
     data = []
     toTs = datetime.timestamp(datetime.strptime(end_date, '%Y-%m-%d'))
     retries = 0
@@ -92,10 +102,6 @@ def fetch_data(fsym, tsym, end_date=None, limit=2000):
     return pd.DataFrame(data)
 
 
-# Other imports and fetch_crypto_data function definition
-
-# Other imports and fetch_data function definition
-
 def fetch_all_crypto_data(start_date):
     """
     Fetches historical data for Bitcoin, Ethereum, and Solana.
@@ -117,7 +123,25 @@ if __name__ == "__main__":
     start_date = '2020-03-24'  # Solana's launch date
 
     try:
-        btc_data, eth_data, sol_data = fetch_all_crypto_data(start_date)
+        btc_data = fetch_data('BTC', 'USD', start_date)
+        eth_data = fetch_data('ETH', 'USD', start_date)
+        sol_data = fetch_data('SOL', 'USD', start_date)
         print("Data fetched successfully for BTC, ETH, and SOL.")
+
+        # Print the first few rows of each DataFrame
+        print("Bitcoin Data:")
+        print(btc_data.head())
+        print("\nEthereum Data:")
+        print(eth_data.head())
+        print("\nSolana Data:")
+        print(sol_data.head())
+
+        # Export to CSV
+        btc_data.to_csv('btc_data.csv', index=False)
+        eth_data.to_csv('eth_data.csv', index=False)
+        sol_data.to_csv('sol_data.csv', index=False)
+        print("\nData exported to CSV files in the root directory.")
+
     except Exception as e:
         print(f"Error occurred: {e}")
+
