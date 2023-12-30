@@ -39,64 +39,56 @@ def validate_data(data):
 
 def fetch_data(fsym, tsym, end_date=None, limit=2000):
     """
-    Fetches historical OHLCV data for a cryptocurrency pair from CryptoCompare API.
+    Fetch historical OHLCV (open, high, low, close, volume) data for a specified cryptocurrency from the CryptoCompare API.
+
+    The function fetches data daily from the specified start date to the end date. It handles pagination automatically to retrieve data beyond the API's single-call limit and includes a retry mechanism for handling request failures.
 
     Parameters:
-    - fsym (str): The symbol of the base cryptocurrency (e.g., 'BTC').
-    - tsym (str): The symbol of the target currency (e.g., 'USD').
-    - end_date (datetime, optional): The end date for fetching historical data.
-    - limit (int, optional): The number of data points to return per batch. Default is 2000.
+    - crypto (str): Symbol of the cryptocurrency (e.g., 'BTC', 'ETH', 'SOL').
+    - start_date (str): Start date for fetching data in 'YYYY-MM-DD' format.
+    - end_date (str, optional): End date for fetching data in 'YYYY-MM-DD' format. Defaults to the current date.
+    - limit (int, optional): The maximum number of data points to return per API call. Defaults to 2000.
 
     Returns:
-    - list: A list of dictionaries containing the requested historical data.
+    - DataFrame: A pandas DataFrame containing the historical data for the specified cryptocurrency.
+
+    Raises:
+    - Exception: If the maximum number of retries is exceeded during API requests.
     """
-    aggregated_data = []
-    toTs = None  # Initialize toTs for the first request
+    data = []
+    toTs = datetime.timestamp(datetime.strptime(end_date, '%Y-%m-%d'))
     retries = 0
+    max_retries = 5
+    retry_delay = 10  # seconds
 
     while True:
         params = {
-            'fsym': fsym,
-            'tsym': tsym,
+            'fsym': crypto,
+            'tsym': 'USD',
             'limit': limit,
             'toTs': toTs,
             'api_key': API_KEY
         }
+
         try:
-            response = requests.get(BASE_URL, params=params, timeout=10)  # Set timeout for the request
+            response = requests.get(BASE_URL, params=params)
             response.raise_for_status()
-            data = response.json()['Data']['Data']
-            if not data:
-                break  # Break the loop if no data is returned
+            batch = response.json()['Data']['Data']
+            data.extend(batch)
 
-            # Data Validation
-            if not all(validate_data(point) for point in data):
-                logging.error(f'Data validation failed for {fsym} to {tsym}')
-                raise ValueError('Invalid data structure received from API')
+            # Check if we've reached the start date
+            if datetime.fromtimestamp(batch[-1]['time']) < datetime.strptime(start_date, '%Y-%m-%d'):
+                break
 
-            aggregated_data.extend(data)
-
-            # Update toTs to the timestamp of the earliest data point received
-            toTs = data[0]['time']
-            if end_date and datetime.datetime.fromtimestamp(toTs) < end_date:
-                break  # Break the loop if the end date is reached
-
-            time.sleep(1)  # Delay to avoid hitting rate limits
-            retries = 0  # Reset retry count after a successful request
-        except (requests.exceptions.ConnectionError, requests.exceptions.Timeout) as err:
-            logging.error(f'Connection/Timeout error occurred for {fsym} to {tsym}: {err}')
+            toTs = batch[0]['time']  # Prepare toTs for the next call
+            retries = 0  # Reset retries after a successful call
+        except requests.exceptions.RequestException as e:
             retries += 1
-            if retries > MAX_RETRIES:
+            if retries > max_retries:
                 raise
-            time.sleep(5)  # Wait for 5 seconds before retrying
-        except requests.exceptions.HTTPError as err:
-            logging.error(f'HTTP error occurred for {fsym} to {tsym}: {err}')
-            raise
-        except Exception as err:
-            logging.error(f'Other error occurred for {fsym} to {tsym}: {err}')
-            raise
+            time.sleep(retry_delay)  # Wait before retrying
 
-    return aggregated_data
+    return pd.DataFrame(data)
 
 
 # Example usage
