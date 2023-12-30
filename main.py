@@ -1,10 +1,12 @@
 import requests
 import logging
+import pandas as pd
 import time
 import datetime
 from dotenv import load_dotenv
 import os
-#TODO: pip freeze to add packages to the requirements.txt
+
+# TODO: pip freeze to add packages to the requirements.txt
 
 
 load_dotenv()  # Loads the variables from '.env'
@@ -12,7 +14,6 @@ load_dotenv()  # Loads the variables from '.env'
 API_KEY = os.environ.get('CRYPTOCOMPARE_API_KEY')
 if not API_KEY:
     raise ValueError("API key not found. Please set the CRYPTOCOMPARE_API_KEY in the .env file.")
-
 
 # Set up basic logging
 logging.basicConfig(filename='crypto_data_fetch.log', level=logging.INFO,
@@ -91,10 +92,32 @@ def fetch_data(fsym, tsym, end_date=None, limit=2000):
     return pd.DataFrame(data)
 
 
-# Example usage
-# end_date = datetime.datetime(2020, 1, 1)  # Replace with your desired end date
-# data = fetch_data('BTC', 'USD', end_date)
+# Other imports and fetch_crypto_data function definition
+
+# Other imports and fetch_data function definition
+
+def fetch_all_crypto_data(start_date):
+    """
+    Fetches historical data for Bitcoin, Ethereum, and Solana.
+
+    Parameters:
+    - start_date (str): The start date for fetching data in 'YYYY-MM-DD' format.
+
+    Returns:
+    - Tuple of DataFrames: (btc_data, eth_data, sol_data)
+    """
+    btc_data = fetch_data('BTC', start_date)
+    eth_data = fetch_data('ETH', start_date)
+    sol_data = fetch_data('SOL', start_date)
+
+    return btc_data, eth_data, sol_data
 
 
-btc_data = fetch_data('BTC', 'USD', limit=2000)
-btc_df = pd.DataFrame(btc_data['Data']['Data'])
+if __name__ == "__main__":
+    start_date = '2020-03-24'  # Solana's launch date
+
+    try:
+        btc_data, eth_data, sol_data = fetch_all_crypto_data(start_date)
+        print("Data fetched successfully for BTC, ETH, and SOL.")
+    except Exception as e:
+        print(f"Error occurred: {e}")
