@@ -235,6 +235,9 @@ if __name__ == '__main__':
             transform_crypto_data(file_path, prefix)
             logging.info(f"Data transformed for {file_path}")
 
-        except Exception as e:
-            logging.error(f"Error in processing {file_path}: {e}")
-
+        except FileNotFoundError as e:
+            logging.error(f"File not found error in processing {file_path}: {e}")
+        except ValueError as e:
+            logging.error(f"Data validation error in processing {file_path}: {e}")
+        except Exception as e:  # Catching any other unexpected exceptions
+            logging.error(f"Unexpected error in processing {file_path}: {e}")
