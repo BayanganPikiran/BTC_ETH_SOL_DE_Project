@@ -65,8 +65,9 @@ def clean_sol_data(csv_path: str = 'sol_data.csv') -> NoReturn:
         # Validate required columns
         required_columns = ['high', 'low', 'open', 'close']
         if not all(column in sol_data.columns for column in required_columns):
-            logging.error("CSV file is missing one or more required columns.")
-            raise ValueError("CSV file is missing one or more required columns.")
+            missing_columns = ', '.join([col for col in required_columns if col not in sol_data.columns])
+            logging.error(f"CSV file is missing the following required columns: {missing_columns}")
+            raise ValueError(f"CSV file is missing the following required columns: {missing_columns}")
 
         # Drop rows where 'high', 'low', 'open', and 'close' are all zero
         sol_data = sol_data[
@@ -76,8 +77,61 @@ def clean_sol_data(csv_path: str = 'sol_data.csv') -> NoReturn:
         sol_data.to_csv(csv_path, index=False)
         logging.info(f"Cleaned data has been written to {csv_path}")
 
-    except Exception as e:
-        logging.error(f"An error occurred in clean_sol_data: {e}")
+    except FileNotFoundError as e:
+        logging.error(f"File not found error in clean_sol_data: {e}")
+        raise
+    except ValueError as e:
+        logging.error(f"Data validation error in clean_sol_data: {e}")
+        raise
+def clean_sol_data(csv_path: str = 'sol_data.csv') -> NoReturn:
+    """
+    Cleans the Solana data CSV file by removing rows where 'high', 'low', 'open', and 'close' are all zero.
+    A backup of the original file is created before performing the operation,
+    ensuring that an existing backup is not overwritten.
+
+    Parameters:
+    csv_path (str): Path to the Solana data CSV file. Default is 'sol_data.csv'.
+    """
+
+    try:
+        # Check if the file exists
+        if not os.path.exists(csv_path):
+            logging.error(f"The file {csv_path} does not exist.")
+            raise FileNotFoundError(f"The file {csv_path} does not exist.")
+
+        logging.info(f"Starting to clean data in {csv_path}")
+
+        # Create a backup of the original file, if it doesn't already exist
+        backup_path = csv_path.replace('.csv', '_backup.csv')
+        if not os.path.exists(backup_path):
+            copyfile(csv_path, backup_path)
+            logging.info(f"Backup created at {backup_path}")
+        else:
+            logging.info(f"Backup already exists at {backup_path}, not overwriting.")
+
+        # Read the CSV file
+        sol_data = pd.read_csv(csv_path)
+
+        # Validate required columns
+        required_columns = ['high', 'low', 'open', 'close']
+        if not all(column in sol_data.columns for column in required_columns):
+            missing_columns = ', '.join([col for col in required_columns if col not in sol_data.columns])
+            logging.error(f"CSV file is missing the following required columns: {missing_columns}")
+            raise ValueError(f"CSV file is missing the following required columns: {missing_columns}")
+
+        # Drop rows where 'high', 'low', 'open', and 'close' are all zero
+        sol_data = sol_data[
+            (sol_data['open'] != 0) & (sol_data['high'] != 0) & (sol_data['low'] != 0) & (sol_data['close'] != 0)]
+
+        # Rewrite the cleaned data to csv
+        sol_data.to_csv(csv_path, index=False)
+        logging.info(f"Cleaned data has been written to {csv_path}")
+
+    except FileNotFoundError as e:
+        logging.error(f"File not found error in clean_sol_data: {e}")
+        raise
+    except ValueError as e:
+        logging.error(f"Data validation error in clean_sol_data: {e}")
         raise
 
 
