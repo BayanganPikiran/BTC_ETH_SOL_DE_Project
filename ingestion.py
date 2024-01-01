@@ -14,6 +14,9 @@ Usage:
 
 Environment Variables:
     CRYPTOCOMPARE_API_KEY: API key for accessing the CryptoCompare API.
+
+Author: Andre La Flamme
+Date: January 2, 2024
 """
 
 from typing import Dict, Tuple

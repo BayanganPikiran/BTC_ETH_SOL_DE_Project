@@ -1,10 +1,39 @@
+"""
+Transformation Script for Cryptocurrency Data
+
+This script performs cleaning and transformation operations on cryptocurrency data files.
+It includes functionality to clean Solana data and transform data for Bitcoin, Ethereum, and Solana.
+
+Dependencies:
+- pandas: For data manipulation
+- os: For file path operations
+- shutil: For file copying
+- logging: For logging operations
+- typing: For type annotations
+
+Usage:
+Run this script directly to process predefined cryptocurrency data files ('btc_data.csv', 'eth_data.csv', 'sol_data.csv').
+It first cleans the Solana data and then applies transformations to all specified files.
+
+Author: Andre La Flamme
+Date: January 2, 2024
+
+Imported Modules:
+from typing import NoReturn
+"""
+
+# The rest of your script follows from here...
+
+
+
 import pandas as pd
 import os
 from shutil import copyfile
 import logging
+from typing import NoReturn
 
 
-def clean_sol_data(csv_path='sol_data.csv'):
+def clean_sol_data(csv_path: str = 'sol_data.csv') -> NoReturn:
     """
     Cleans the Solana data CSV file by removing rows where 'high', 'low', 'open', and 'close' are all zero.
     A backup of the original file is created before performing the operation,
@@ -52,7 +81,7 @@ def clean_sol_data(csv_path='sol_data.csv'):
         raise
 
 
-def transform_crypto_data(csv_path, crypto_prefix):
+def transform_crypto_data(csv_path: str, crypto_prefix: str) -> NoReturn:
     """
     Transforms cryptocurrency data in a CSV file.
 
@@ -140,8 +169,15 @@ if __name__ == '__main__':
     # Process each file
     for file_path, prefix in file_paths_and_prefixes.items():
         try:
+            # Clean data if it's the Solana dataset
+            if file_path == 'sol_data.csv':
+                clean_sol_data(file_path)
+                logging.info(f"Data cleaned for {file_path}")
+
+            # Transform data for all datasets
             transform_crypto_data(file_path, prefix)
             logging.info(f"Data transformed for {file_path}")
+
         except Exception as e:
             logging.error(f"Error in processing {file_path}: {e}")
 
