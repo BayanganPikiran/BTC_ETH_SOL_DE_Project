@@ -199,8 +199,11 @@ def transform_crypto_data(csv_path: str, crypto_prefix: str) -> NoReturn:
         data.to_csv(csv_path, index=False)
         logging.info(f"Transformed data saved to {csv_path}")
 
-    except Exception as e:
-        logging.error(f"An error occurred in transform_crypto_data: {e}")
+    except FileNotFoundError as e:
+        logging.error(f"File not found error in transform_crypto_data: {e}")
+        raise
+    except ValueError as e:
+        logging.error(f"Data validation error in transform_crypto_data: {e}")
         raise
 
 
