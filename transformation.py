@@ -1,6 +1,7 @@
 import pandas as pd
 import os
 from shutil import copyfile
+import logging
 
 
 def clean_sol_data(csv_path='sol_data.csv'):
@@ -12,31 +13,38 @@ def clean_sol_data(csv_path='sol_data.csv'):
     csv_path (str): Path to the Solana data CSV file. Default is 'sol_data.csv'.
     """
 
-    # Check if the file exists
-    if not os.path.exists(csv_path):
-        raise FileNotFoundError(f"The file {csv_path} does not exist.")
+    try:
+        # Check if the file exists
+        if not os.path.exists(csv_path):
+            logging.error(f"The file {csv_path} does not exist.")
+            raise FileNotFoundError(f"The file {csv_path} does not exist.")
 
-    # Create a backup of the original file
-    backup_path = csv_path.replace('.csv', '_backup.csv')
-    copyfile(csv_path, backup_path)
+        logging.info(f"Starting to clean data in {csv_path}")
 
-    # Read the CSV file
-    sol_data = pd.read_csv(csv_path)
+        # Create a backup of the original file
+        backup_path = csv_path.replace('.csv', '_backup.csv')
+        copyfile(csv_path, backup_path)
+        logging.info(f"Backup created at {backup_path}")
 
-    # Validate required columns
-    required_columns = ['high', 'low', 'open', 'close']
-    if not all(column in sol_data.columns for column in required_columns):
-        raise ValueError("CSV file is missing one or more required columns.")
+        # Read the CSV file
+        sol_data = pd.read_csv(csv_path)
 
-    # Drop rows where 'high', 'low', 'open', and 'close' are all zero
-    sol_data = sol_data[
-        (sol_data['open'] != 0) & (sol_data['high'] != 0) & (sol_data['low'] != 0) & (sol_data['close'] != 0)]
+        # Validate required columns
+        required_columns = ['high', 'low', 'open', 'close']
+        if not all(column in sol_data.columns for column in required_columns):
+            logging.error("CSV file is missing one or more required columns.")
+            raise ValueError("CSV file is missing one or more required columns.")
 
-    # Rewrite the cleaned data to csv
-    sol_data.to_csv(csv_path, index=False)
+        # Drop rows where 'high', 'low', 'open', and 'close' are all zero
+        sol_data = sol_data[(sol_data['open'] != 0) & (sol_data['high'] != 0) & (sol_data['low'] != 0) & (sol_data['close'] != 0)]
 
-    print(f"Cleaned data has been written to {csv_path}, original data is backed up at {backup_path}.")
+        # Rewrite the cleaned data to csv
+        sol_data.to_csv(csv_path, index=False)
+        logging.info(f"Cleaned data has been written to {csv_path}")
 
+    except Exception as e:
+        logging.error(f"An error occurred in clean_sol_data: {e}")
+        raise
 
 def transform_crypto_data(csv_path, crypto_prefix):
     """
@@ -81,5 +89,16 @@ def transform_crypto_data(csv_path, crypto_prefix):
 
     return data
 
-# Example usage
-# transform_crypto_data('sol_data.csv', 'SOL')
+
+if __name__ == '__main__':
+    # Specify file paths and prefixes
+    file_paths = ['sol_data.csv', 'eth_data.csv', 'btc_data.csv']
+    prefixes = ['SOL', 'ETH', 'BTC']
+
+    # Transform each file
+    for file_path, prefix in zip(file_paths, prefixes):
+        try:
+            transform_crypto_data(file_path, prefix)
+            print(f"Data transformed for {file_path}")
+        except Exception as e:
+            print(f"An error occurred while transforming {file_path}: {e}")
