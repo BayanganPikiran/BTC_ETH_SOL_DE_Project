@@ -51,6 +51,7 @@ def clean_sol_data(csv_path='sol_data.csv'):
         logging.error(f"An error occurred in clean_sol_data: {e}")
         raise
 
+
 def transform_crypto_data(csv_path, crypto_prefix):
     """
     Transforms cryptocurrency data in a CSV file.
@@ -128,8 +129,19 @@ if __name__ == '__main__':
                             logging.FileHandler('crypto_data_transformation.log'),
                             logging.StreamHandler()
                         ])
-    try:
-        transform_crypto_data('example_data.csv', 'BTC')
-    except Exception as e:
-        logging.error(f"Error in main execution: {e}")
-#
+
+    # Specify file paths and their respective prefixes
+    file_paths_and_prefixes = {
+        'btc_data.csv': 'BTC',
+        'eth_data.csv': 'ETH',
+        'sol_data.csv': 'SOL'
+    }
+
+    # Process each file
+    for file_path, prefix in file_paths_and_prefixes.items():
+        try:
+            transform_crypto_data(file_path, prefix)
+            logging.info(f"Data transformed for {file_path}")
+        except Exception as e:
+            logging.error(f"Error in processing {file_path}: {e}")
+
