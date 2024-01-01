@@ -7,7 +7,8 @@ import logging
 def clean_sol_data(csv_path='sol_data.csv'):
     """
     Cleans the Solana data CSV file by removing rows where 'high', 'low', 'open', and 'close' are all zero.
-    A backup of the original file is created before performing the operation.
+    A backup of the original file is created before performing the operation,
+    ensuring that an existing backup is not overwritten.
 
     Parameters:
     csv_path (str): Path to the Solana data CSV file. Default is 'sol_data.csv'.
@@ -21,10 +22,13 @@ def clean_sol_data(csv_path='sol_data.csv'):
 
         logging.info(f"Starting to clean data in {csv_path}")
 
-        # Create a backup of the original file
+        # Create a backup of the original file, if it doesn't already exist
         backup_path = csv_path.replace('.csv', '_backup.csv')
-        copyfile(csv_path, backup_path)
-        logging.info(f"Backup created at {backup_path}")
+        if not os.path.exists(backup_path):
+            copyfile(csv_path, backup_path)
+            logging.info(f"Backup created at {backup_path}")
+        else:
+            logging.info(f"Backup already exists at {backup_path}, not overwriting.")
 
         # Read the CSV file
         sol_data = pd.read_csv(csv_path)
@@ -46,7 +50,6 @@ def clean_sol_data(csv_path='sol_data.csv'):
     except Exception as e:
         logging.error(f"An error occurred in clean_sol_data: {e}")
         raise
-
 
 def transform_crypto_data(csv_path, crypto_prefix):
     """
@@ -74,6 +77,13 @@ def transform_crypto_data(csv_path, crypto_prefix):
 
         # Read the CSV file
         data = pd.read_csv(csv_path)
+
+        # Validate required columns
+        required_columns = ['time', 'volumefrom', 'volumeto']
+        if not all(column in data.columns for column in required_columns):
+            missing_columns = ', '.join([col for col in required_columns if col not in data.columns])
+            logging.error(f"CSV file is missing the following required columns: {missing_columns}")
+            raise ValueError(f"CSV file is missing the following required columns: {missing_columns}")
 
         # Generate record_id
         data['record_id'] = [f"{crypto_prefix}{str(i).zfill(2)}" for i in range(1, len(data) + 1)]
