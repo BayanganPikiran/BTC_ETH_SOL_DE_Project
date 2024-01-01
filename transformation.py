@@ -46,6 +46,10 @@ def clean_sol_data(csv_path='sol_data.csv'):
         logging.error(f"An error occurred in clean_sol_data: {e}")
         raise
 
+import pandas as pd
+import os
+import logging
+
 def transform_crypto_data(csv_path, crypto_prefix):
     """
     Transforms cryptocurrency data in a CSV file.
@@ -62,43 +66,136 @@ def transform_crypto_data(csv_path, crypto_prefix):
     - Drops the 'conversionType' and 'conversionSymbol' columns.
     """
 
-    if not os.path.exists(csv_path):
-        raise FileNotFoundError(f"The file {csv_path} does not exist.")
+    try:
+        if not os.path.exists(csv_path):
+            logging.error(f"The file {csv_path} does not exist.")
+            raise FileNotFoundError(f"The file {csv_path} does not exist.")
 
-    # Read the CSV file
-    data = pd.read_csv(csv_path)
+        logging.info(f"Starting transformation of data in {csv_path}")
 
-    # Generate record_id
-    data['record_id'] = [f"{crypto_prefix}{str(i).zfill(2)}" for i in range(1, len(data) + 1)]
+        # Read the CSV file
+        data = pd.read_csv(csv_path)
 
-    # Convert 'time' column to 'date'
-    data['date'] = pd.to_datetime(data['time'], unit='s').dt.strftime('%Y-%m-%d')
-    data.drop('time', axis=1, inplace=True)
+        # Generate record_id
+        data['record_id'] = [f"{crypto_prefix}{str(i).zfill(2)}" for i in range(1, len(data) + 1)]
+        logging.info("Record IDs generated.")
 
-    # Rename columns
-    data.rename(columns={'volumefrom': 'trade_vol_native', 'volumeto': 'trade_vol_USD'}, inplace=True)
+        # Convert 'time' column to 'date'
+        data['date'] = pd.to_datetime(data['time'], unit='s').dt.strftime('%Y-%m-%d')
+        data.drop('time', axis=1, inplace=True)
+        logging.info("'time' column converted to 'date'.")
 
-    # Refactor 'trade_vol_USD' to full numeric value
-    data['trade_vol_USD'] = data['trade_vol_USD'].apply(lambda x: '{:.2f}'.format(x))
+        # Rename columns
+        data.rename(columns={'volumefrom': 'trade_vol_native', 'volumeto': 'trade_vol_USD'}, inplace=True)
+        logging.info("Columns renamed.")
 
-    # Drop unnecessary columns
-    data.drop(['conversionType', 'conversionSymbol'], axis=1, inplace=True)
+        # Refactor 'trade_vol_USD' to full numeric value
+        data['trade_vol_USD'] = data['trade_vol_USD'].apply(lambda x: '{:.2f}'.format(x))
+        logging.info("'trade_vol_USD' column refactored to full numeric value.")
 
-    # Save the transformed data
-    data.to_csv(csv_path, index=False)
+        # Drop unnecessary columns
+        data.drop(['conversionType', 'conversionSymbol'], axis=1, inplace=True)
+        logging.info("'conversionType' and 'conversionSymbol' columns dropped.")
 
-    return data
+        # Save the transformed data
+        data.to_csv(csv_path, index=False)
+        logging.info(f"Transformed data saved to {csv_path}")
 
+    except Exception as e:
+        logging.error(f"An error occurred in transform_crypto_data: {e}")
+        raise
+
+# Example of logging configuration and usage in main block
+if __name__ == '__main__':
+    logging.basicConfig(level=logging.INFO,
+                        format='%(asctime)s - %(levelname)s - %(message)s',
+                        handlers=[
+                            logging.FileHandler('crypto_data_transformation.log'),
+                            logging.StreamHandler()
+                        ])
+    try:
+        transform_crypto_data('example_data.csv', 'BTC')
+    except Exception as e:
+        logging.error(f"Error in main execution: {e}")
+
+def transform_crypto_data(csv_path, crypto_prefix):
+    """
+    Transforms cryptocurrency data in a CSV file.
+
+    Parameters:
+    csv_path (str): Path to the cryptocurrency data CSV file.
+    crypto_prefix (str): Prefix for the cryptocurrency (e.g., 'BTC', 'ETH', 'SOL').
+
+    The function performs the following transformations:
+    - Generates a record_id column with the crypto prefix followed by a sequential integer.
+    - Converts the time column from Unix timestamp to YYYY-MM-DD format and renames it to 'date'.
+    - Renames 'volumefrom' to 'trade_vol_native'.
+    - Renames 'volumeto' to 'trade_vol_USD' and refactors it to show the full numeric value.
+    - Drops the 'conversionType' and 'conversionSymbol' columns.
+    """
+
+    try:
+        if not os.path.exists(csv_path):
+            logging.error(f"The file {csv_path} does not exist.")
+            raise FileNotFoundError(f"The file {csv_path} does not exist.")
+
+        logging.info(f"Starting transformation of data in {csv_path}")
+
+        # Read the CSV file
+        data = pd.read_csv(csv_path)
+
+        # Generate record_id
+        data['record_id'] = [f"{crypto_prefix}{str(i).zfill(2)}" for i in range(1, len(data) + 1)]
+        logging.info("Record IDs generated.")
+
+        # Convert 'time' column to 'date'
+        data['date'] = pd.to_datetime(data['time'], unit='s').dt.strftime('%Y-%m-%d')
+        data.drop('time', axis=1, inplace=True)
+        logging.info("'time' column converted to 'date'.")
+
+        # Rename columns
+        data.rename(columns={'volumefrom': 'trade_vol_native', 'volumeto': 'trade_vol_USD'}, inplace=True)
+        logging.info("Columns renamed.")
+
+        # Refactor 'trade_vol_USD' to full numeric value
+        data['trade_vol_USD'] = data['trade_vol_USD'].apply(lambda x: '{:.2f}'.format(x))
+        logging.info("'trade_vol_USD' column refactored to full numeric value.")
+
+        # Drop unnecessary columns
+        data.drop(['conversionType', 'conversionSymbol'], axis=1, inplace=True)
+        logging.info("'conversionType' and 'conversionSymbol' columns dropped.")
+
+        # Save the transformed data
+        data.to_csv(csv_path, index=False)
+        logging.info(f"Transformed data saved to {csv_path}")
+
+    except Exception as e:
+        logging.error(f"An error occurred in transform_crypto_data: {e}")
+        raise
 
 if __name__ == '__main__':
-    # Specify file paths and prefixes
+    logging.basicConfig(level=logging.INFO,
+                        format='%(asctime)s - %(levelname)s - %(message)s',
+                        handlers=[
+                            logging.FileHandler('crypto_data_processing.log'),
+                            logging.StreamHandler()
+                        ])
+
+    # Specify file paths and prefixes for transformation
     file_paths = ['sol_data.csv', 'eth_data.csv', 'btc_data.csv']
     prefixes = ['SOL', 'ETH', 'BTC']
 
-    # Transform each file
+    # Clean and transform each file
     for file_path, prefix in zip(file_paths, prefixes):
         try:
+            # Clean data if it's the Solana dataset
+            if 'sol' in file_path.lower():
+                clean_sol_data(file_path)
+                logging.info(f"Data cleaned for {file_path}")
+
+            # Transform data
             transform_crypto_data(file_path, prefix)
-            print(f"Data transformed for {file_path}")
+            logging.info(f"Data transformed for {file_path}")
+
         except Exception as e:
-            print(f"An error occurred while transforming {file_path}: {e}")
+            logging.error(f"An error occurred while processing {file_path}: {e}")
