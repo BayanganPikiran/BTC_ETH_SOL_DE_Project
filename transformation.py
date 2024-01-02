@@ -25,7 +25,6 @@ from typing import NoReturn
 # The rest of your script follows from here...
 
 
-
 import pandas as pd
 import os
 from shutil import copyfile
@@ -83,6 +82,8 @@ def clean_sol_data(csv_path: str = 'sol_data.csv') -> NoReturn:
     except ValueError as e:
         logging.error(f"Data validation error in clean_sol_data: {e}")
         raise
+
+
 def clean_sol_data(csv_path: str = 'sol_data.csv') -> NoReturn:
     """
     Cleans the Solana data CSV file by removing rows where 'high', 'low', 'open', and 'close' are all zero.
@@ -207,8 +208,49 @@ def transform_crypto_data(csv_path: str, crypto_prefix: str) -> NoReturn:
         raise
 
 
-# Example of logging configuration and usage in main block
+def setup_logging():
+    """
+    Sets up the logging configuration for the script.
+
+    This function configures logging to write INFO level and above messages to both
+    a file ('crypto_data_transformation.log') and the console. The logging configuration
+    includes a timestamp, the logging level, and the message.
+
+    This setup ensures that logging is only configured when the script is executed directly,
+    preventing duplicate logging configurations when the script is imported as a module.
+    """
+    if not logging.getLogger().hasHandlers():
+        logging.basicConfig(level=logging.INFO,
+                            format='%(asctime)s - %(levelname)s - %(message)s',
+                            handlers=[
+                                logging.FileHandler('crypto_data_transformation.log'),
+                                logging.StreamHandler()
+                            ])
+
+
+def setup_logging():
+    """
+    Sets up the logging configuration for the script.
+
+    This function configures logging to write INFO level and above messages to both
+    a file ('crypto_data_transformation.log') and the console. The logging configuration
+    includes a timestamp, the logging level, and the message.
+
+    This setup ensures that logging is only configured when the script is executed directly,
+    preventing duplicate logging configurations when the script is imported as a module.
+    """
+    if not logging.getLogger().hasHandlers():
+        logging.basicConfig(level=logging.INFO,
+                            format='%(asctime)s - %(levelname)s - %(message)s',
+                            handlers=[
+                                logging.FileHandler('crypto_data_transformation.log'),
+                                logging.StreamHandler()
+                            ])
+
+
 if __name__ == '__main__':
+    setup_logging()
+
     logging.basicConfig(level=logging.INFO,
                         format='%(asctime)s - %(levelname)s - %(message)s',
                         handlers=[
