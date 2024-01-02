@@ -30,6 +30,7 @@ import os
 from shutil import copyfile
 import logging
 from typing import NoReturn
+import datetime
 
 
 def clean_sol_data(csv_path: str = 'sol_data.csv') -> NoReturn:
@@ -102,8 +103,11 @@ def clean_sol_data(csv_path: str = 'sol_data.csv') -> NoReturn:
 
         logging.info(f"Starting to clean data in {csv_path}")
 
-        # Create a backup of the original file, if it doesn't already exist
-        backup_path = csv_path.replace('.csv', '_backup.csv')
+        # Generate a timestamp for the backup file
+        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        backup_path = csv_path.replace('.csv', f'_backup_{timestamp}.csv')
+
+        # Create a backup of the original file
         if not os.path.exists(backup_path):
             copyfile(csv_path, backup_path)
             logging.info(f"Backup created at {backup_path}")
@@ -116,9 +120,8 @@ def clean_sol_data(csv_path: str = 'sol_data.csv') -> NoReturn:
         # Validate required columns
         required_columns = ['high', 'low', 'open', 'close']
         if not all(column in sol_data.columns for column in required_columns):
-            missing_columns = ', '.join([col for col in required_columns if col not in sol_data.columns])
-            logging.error(f"CSV file is missing the following required columns: {missing_columns}")
-            raise ValueError(f"CSV file is missing the following required columns: {missing_columns}")
+            logging.error("CSV file is missing one or more required columns.")
+            raise ValueError("CSV file is missing one or more required columns.")
 
         # Drop rows where 'high', 'low', 'open', and 'close' are all zero
         sol_data = sol_data[
@@ -134,7 +137,6 @@ def clean_sol_data(csv_path: str = 'sol_data.csv') -> NoReturn:
     except ValueError as e:
         logging.error(f"Data validation error in clean_sol_data: {e}")
         raise
-
 
 def transform_crypto_data(csv_path: str, crypto_prefix: str) -> NoReturn:
     """
