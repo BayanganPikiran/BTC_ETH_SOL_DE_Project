@@ -32,57 +32,21 @@ import logging
 from typing import NoReturn
 import datetime
 
-
-def clean_sol_data(csv_path: str = 'sol_data.csv') -> NoReturn:
-    """
-    Cleans the Solana data CSV file by removing rows where 'high', 'low', 'open', and 'close' are all zero.
-    A backup of the original file is created before performing the operation,
-    ensuring that an existing backup is not overwritten.
-
-    Parameters:
-    csv_path (str): Path to the Solana data CSV file. Default is 'sol_data.csv'.
-    """
-
-    try:
-        # Check if the file exists
-        if not os.path.exists(csv_path):
-            logging.error(f"The file {csv_path} does not exist.")
-            raise FileNotFoundError(f"The file {csv_path} does not exist.")
-
-        logging.info(f"Starting to clean data in {csv_path}")
-
-        # Create a backup of the original file, if it doesn't already exist
-        backup_path = csv_path.replace('.csv', '_backup.csv')
-        if not os.path.exists(backup_path):
-            copyfile(csv_path, backup_path)
-            logging.info(f"Backup created at {backup_path}")
-        else:
-            logging.info(f"Backup already exists at {backup_path}, not overwriting.")
-
-        # Read the CSV file
-        sol_data = pd.read_csv(csv_path)
-
-        # Validate required columns
-        required_columns = ['high', 'low', 'open', 'close']
-        if not all(column in sol_data.columns for column in required_columns):
-            missing_columns = ', '.join([col for col in required_columns if col not in sol_data.columns])
-            logging.error(f"CSV file is missing the following required columns: {missing_columns}")
-            raise ValueError(f"CSV file is missing the following required columns: {missing_columns}")
-
-        # Drop rows where 'high', 'low', 'open', and 'close' are all zero
-        sol_data = sol_data[
-            (sol_data['open'] != 0) & (sol_data['high'] != 0) & (sol_data['low'] != 0) & (sol_data['close'] != 0)]
-
-        # Rewrite the cleaned data to csv
-        sol_data.to_csv(csv_path, index=False)
-        logging.info(f"Cleaned data has been written to {csv_path}")
-
-    except FileNotFoundError as e:
-        logging.error(f"File not found error in clean_sol_data: {e}")
-        raise
-    except ValueError as e:
-        logging.error(f"Data validation error in clean_sol_data: {e}")
-        raise
+# Constants
+HIGH_COLUMN = 'high'
+LOW_COLUMN = 'low'
+OPEN_COLUMN = 'open'
+CLOSE_COLUMN = 'close'
+VOLUME_FROM_COLUMN = 'volumefrom'
+VOLUME_TO_COLUMN = 'volumeto'
+CONVERSION_TYPE_COLUMN = 'conversionType'
+CONVERSION_SYMBOL_COLUMN = 'conversionSymbol'
+BACKUP_DATE_FORMAT = "%Y%m%d_%H%M%S"
+DATE_FORMAT = '%Y-%m-%d'
+# Constants for logging
+LOG_LEVEL = logging.INFO
+LOG_FORMAT = '%(asctime)s - %(levelname)s - %(message)s'
+LOG_FILE = 'crypto_data_transformation.log'
 
 
 def clean_sol_data(csv_path: str = 'sol_data.csv') -> NoReturn:
@@ -104,7 +68,7 @@ def clean_sol_data(csv_path: str = 'sol_data.csv') -> NoReturn:
         logging.info(f"Starting to clean data in {csv_path}")
 
         # Generate a timestamp for the backup file
-        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        timestamp = datetime.datetime.now().strftime(BACKUP_DATE_FORMAT)
         backup_path = csv_path.replace('.csv', f'_backup_{timestamp}.csv')
 
         # Create a backup of the original file
@@ -118,14 +82,16 @@ def clean_sol_data(csv_path: str = 'sol_data.csv') -> NoReturn:
         sol_data = pd.read_csv(csv_path)
 
         # Validate required columns
-        required_columns = ['high', 'low', 'open', 'close']
+        required_columns = [HIGH_COLUMN, LOW_COLUMN, OPEN_COLUMN, CLOSE_COLUMN]
         if not all(column in sol_data.columns for column in required_columns):
-            logging.error("CSV file is missing one or more required columns.")
-            raise ValueError("CSV file is missing one or more required columns.")
+            missing_columns = ', '.join([col for col in required_columns if col not in sol_data.columns])
+            logging.error(f"CSV file is missing the following required columns: {missing_columns}")
+            raise ValueError(f"CSV file is missing the following required columns: {missing_columns}")
 
         # Drop rows where 'high', 'low', 'open', and 'close' are all zero
         sol_data = sol_data[
-            (sol_data['open'] != 0) & (sol_data['high'] != 0) & (sol_data['low'] != 0) & (sol_data['close'] != 0)]
+            (sol_data[OPEN_COLUMN] != 0) & (sol_data[HIGH_COLUMN] != 0) &
+            (sol_data[LOW_COLUMN] != 0) & (sol_data[CLOSE_COLUMN] != 0)]
 
         # Rewrite the cleaned data to csv
         sol_data.to_csv(csv_path, index=False)
@@ -137,6 +103,7 @@ def clean_sol_data(csv_path: str = 'sol_data.csv') -> NoReturn:
     except ValueError as e:
         logging.error(f"Data validation error in clean_sol_data: {e}")
         raise
+
 
 def transform_crypto_data(csv_path: str, crypto_prefix: str) -> NoReturn:
     """
@@ -166,7 +133,7 @@ def transform_crypto_data(csv_path: str, crypto_prefix: str) -> NoReturn:
         data = pd.read_csv(csv_path)
 
         # Validate required columns
-        required_columns = ['time', 'volumefrom', 'volumeto']
+        required_columns = ['time', VOLUME_FROM_COLUMN, VOLUME_TO_COLUMN]
         if not all(column in data.columns for column in required_columns):
             missing_columns = ', '.join([col for col in required_columns if col not in data.columns])
             logging.error(f"CSV file is missing the following required columns: {missing_columns}")
@@ -177,12 +144,12 @@ def transform_crypto_data(csv_path: str, crypto_prefix: str) -> NoReturn:
         logging.info("Record IDs generated.")
 
         # Convert 'time' column to 'date'
-        data['date'] = pd.to_datetime(data['time'], unit='s').dt.strftime('%Y-%m-%d')
+        data['date'] = pd.to_datetime(data['time'], unit='s').dt.strftime(DATE_FORMAT)
         data.drop('time', axis=1, inplace=True)
         logging.info("'time' column converted to 'date'.")
 
         # Rename columns
-        data.rename(columns={'volumefrom': 'trade_vol_native', 'volumeto': 'trade_vol_USD'}, inplace=True)
+        data.rename(columns={VOLUME_FROM_COLUMN: 'trade_vol_native', VOLUME_TO_COLUMN: 'trade_vol_USD'}, inplace=True)
         logging.info("Columns renamed.")
 
         # Refactor 'trade_vol_USD' to full numeric value
@@ -190,11 +157,12 @@ def transform_crypto_data(csv_path: str, crypto_prefix: str) -> NoReturn:
         logging.info("'trade_vol_USD' column refactored to full numeric value.")
 
         # Drop unnecessary columns
-        data.drop(['conversionType', 'conversionSymbol'], axis=1, inplace=True)
+        data.drop([CONVERSION_TYPE_COLUMN, CONVERSION_SYMBOL_COLUMN], axis=1, inplace=True)
         logging.info("'conversionType' and 'conversionSymbol' columns dropped.")
 
         # Reorder the columns
-        desired_order = ['record_id', 'date', 'open', 'low', 'high', 'close', 'trade_vol_native', 'trade_vol_USD']
+        desired_order = ['record_id', 'date', OPEN_COLUMN, LOW_COLUMN, HIGH_COLUMN, CLOSE_COLUMN, 'trade_vol_native',
+                         'trade_vol_USD']
         data = data[desired_order]
         logging.info("Columns reordered.")
 
@@ -210,55 +178,24 @@ def transform_crypto_data(csv_path: str, crypto_prefix: str) -> NoReturn:
         raise
 
 
-def setup_logging():
+def setup_logging() -> NoReturn:
     """
     Sets up the logging configuration for the script.
 
-    This function configures logging to write INFO level and above messages to both
-    a file ('crypto_data_transformation.log') and the console. The logging configuration
-    includes a timestamp, the logging level, and the message.
-
-    This setup ensures that logging is only configured when the script is executed directly,
-    preventing duplicate logging configurations when the script is imported as a module.
+    Configures logging to write messages to both a file and the console.
+    Only configures logging if no handlers have been set up previously.
     """
     if not logging.getLogger().hasHandlers():
-        logging.basicConfig(level=logging.INFO,
-                            format='%(asctime)s - %(levelname)s - %(message)s',
+        logging.basicConfig(level=LOG_LEVEL,
+                            format=LOG_FORMAT,
                             handlers=[
-                                logging.FileHandler('crypto_data_transformation.log'),
-                                logging.StreamHandler()
-                            ])
-
-
-def setup_logging():
-    """
-    Sets up the logging configuration for the script.
-
-    This function configures logging to write INFO level and above messages to both
-    a file ('crypto_data_transformation.log') and the console. The logging configuration
-    includes a timestamp, the logging level, and the message.
-
-    This setup ensures that logging is only configured when the script is executed directly,
-    preventing duplicate logging configurations when the script is imported as a module.
-    """
-    if not logging.getLogger().hasHandlers():
-        logging.basicConfig(level=logging.INFO,
-                            format='%(asctime)s - %(levelname)s - %(message)s',
-                            handlers=[
-                                logging.FileHandler('crypto_data_transformation.log'),
+                                logging.FileHandler(LOG_FILE),
                                 logging.StreamHandler()
                             ])
 
 
 if __name__ == '__main__':
     setup_logging()
-
-    logging.basicConfig(level=logging.INFO,
-                        format='%(asctime)s - %(levelname)s - %(message)s',
-                        handlers=[
-                            logging.FileHandler('crypto_data_transformation.log'),
-                            logging.StreamHandler()
-                        ])
 
     # Specify file paths and their respective prefixes
     file_paths_and_prefixes = {
