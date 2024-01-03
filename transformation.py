@@ -115,11 +115,12 @@ def transform_crypto_data(csv_path: str, crypto_prefix: str) -> NoReturn:
 
     The function performs the following transformations:
     - Generates a record_id column with the crypto prefix followed by a sequential integer.
+    - Adds a coin_symbol column and populates it with the cryptocurrency's symbol.
     - Converts the time column from Unix timestamp to YYYY-MM-DD format and renames it to 'date'.
     - Renames 'volumefrom' to 'trade_vol_native'.
     - Renames 'volumeto' to 'trade_vol_USD' and refactors it to show the full numeric value.
     - Drops the 'conversionType' and 'conversionSymbol' columns.
-    - Reorders the columns to a specified format.
+    - Reorders the columns to the specified format.
     """
 
     try:
@@ -141,7 +142,9 @@ def transform_crypto_data(csv_path: str, crypto_prefix: str) -> NoReturn:
 
         # Generate record_id
         data['record_id'] = [f"{crypto_prefix}{str(i).zfill(2)}" for i in range(1, len(data) + 1)]
-        logging.info("Record IDs generated.")
+        # Add coin_symbol column
+        data['coin_symbol'] = crypto_prefix
+        logging.info("Record IDs and coin symbols generated.")
 
         # Convert 'time' column to 'date'
         data['date'] = pd.to_datetime(data['time'], unit='s').dt.strftime(DATE_FORMAT)
@@ -161,8 +164,7 @@ def transform_crypto_data(csv_path: str, crypto_prefix: str) -> NoReturn:
         logging.info("'conversionType' and 'conversionSymbol' columns dropped.")
 
         # Reorder the columns
-        desired_order = ['record_id', 'date', OPEN_COLUMN, LOW_COLUMN, HIGH_COLUMN, CLOSE_COLUMN, 'trade_vol_native',
-                         'trade_vol_USD']
+        desired_order = ['record_id', 'coin_symbol', 'date', OPEN_COLUMN, LOW_COLUMN, HIGH_COLUMN, CLOSE_COLUMN, 'trade_vol_native', 'trade_vol_USD']
         data = data[desired_order]
         logging.info("Columns reordered.")
 
@@ -176,6 +178,7 @@ def transform_crypto_data(csv_path: str, crypto_prefix: str) -> NoReturn:
     except ValueError as e:
         logging.error(f"Data validation error in transform_crypto_data: {e}")
         raise
+
 
 
 def setup_logging() -> NoReturn:
