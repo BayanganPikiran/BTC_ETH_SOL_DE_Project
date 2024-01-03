@@ -3,7 +3,6 @@ import pandas as pd
 from dotenv import load_dotenv
 import os
 
-
 load_dotenv()  # This loads the environment variables from .env
 
 DB_HOST = os.getenv('DB_HOST')
@@ -59,6 +58,32 @@ def load_csv_to_db(csv_file_path, table_name, db_connection):
         print(f"Error occurred: {e}")
 
 
+def load_csv_to_db(csv_file_path, table_name, db_connection, desired_order):
+    try:
+        # Read CSV file using pandas
+        data = pd.read_csv(csv_file_path)
+
+        # Reorder DataFrame columns to match the desired order
+        data = data[desired_order]
+
+        # Convert DataFrame to list of tuples for SQL insertion
+        data_tuples = [tuple(row) for row in data.to_numpy()]
+
+        # SQL query for inserting data
+        columns = ', '.join(desired_order)
+        placeholders = ', '.join(['%s'] * len(desired_order))
+        insert_query = f"INSERT INTO {table_name} ({columns}) VALUES ({placeholders})"
+
+        # Create a cursor object using the connection
+        with db_connection.cursor() as cursor:
+            # Execute the SQL command with the data
+            cursor.executemany(insert_query, data_tuples)
+            db_connection.commit()
+            print(f"Data from {csv_file_path} loaded into {table_name} successfully.")
+
+    except Exception as e:
+        db_connection.rollback()
+        print(f"Error occurred: {e}")
 
 # # Example usage
 # db_connection = create_db_connection()
