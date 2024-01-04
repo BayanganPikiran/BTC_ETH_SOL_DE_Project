@@ -125,13 +125,27 @@ if __name__ == "__main__":
     setup_logging()
     logging.info("Starting script execution...")
 
+    # Check for dry run mode
+    if DRY_RUN:
+        logging.info("Running in DRY RUN mode. No changes will be committed to the database.")
+
+    # Create a database connection
     with create_db_connection() as db_connection:
         if db_connection:
             try:
+                # Load data from CSV files into database tables
+                # In dry run mode, these operations will not commit any changes to the database
                 load_csv_to_db(BTC_CSV_PATH, 'Bitcoin_records', db_connection)
                 load_csv_to_db(ETH_CSV_PATH, 'Ethereum_records', db_connection)
                 load_csv_to_db(SOL_CSV_PATH, 'Solana_records', db_connection)
             except Exception as e:
                 logging.error(f"An unexpected error occurred: {e}")
+            finally:
+                # In dry run mode, the connection is rolled back and closed without committing
+                if DRY_RUN:
+                    db_connection.rollback()
+                logging.info("Database connection closed.")
+        else:
+            logging.error("Failed to establish a database connection.")
 
     logging.info("Script execution completed.")
