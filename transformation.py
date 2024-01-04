@@ -164,7 +164,8 @@ def transform_crypto_data(csv_path: str, crypto_prefix: str) -> NoReturn:
         logging.info("'conversionType' and 'conversionSymbol' columns dropped.")
 
         # Reorder the columns
-        desired_order = ['record_id', 'coin_symbol', 'date', OPEN_COLUMN, LOW_COLUMN, HIGH_COLUMN, CLOSE_COLUMN, 'trade_vol_native', 'trade_vol_USD']
+        desired_order = ['record_id', 'coin_symbol', 'date', OPEN_COLUMN, LOW_COLUMN, HIGH_COLUMN, CLOSE_COLUMN,
+                         'trade_vol_native', 'trade_vol_USD']
         data = data[desired_order]
         logging.info("Columns reordered.")
 
@@ -178,7 +179,6 @@ def transform_crypto_data(csv_path: str, crypto_prefix: str) -> NoReturn:
     except ValueError as e:
         logging.error(f"Data validation error in transform_crypto_data: {e}")
         raise
-
 
 
 def setup_logging() -> NoReturn:
