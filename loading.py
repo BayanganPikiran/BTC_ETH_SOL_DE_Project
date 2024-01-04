@@ -11,7 +11,6 @@ Usage:
     database credentials and CSV file paths.
 """
 
-
 import pymysql
 import pandas as pd
 from dotenv import load_dotenv
@@ -30,6 +29,8 @@ BTC_CSV_PATH = os.getenv('BTC_CSV_PATH')
 ETH_CSV_PATH = os.getenv('ETH_CSV_PATH')
 SOL_CSV_PATH = os.getenv('SOL_CSV_PATH')
 
+# Set up the feature flag
+DRY_RUN = os.getenv('DRY_RUN', 'False').lower() == 'true'
 
 
 def create_db_connection() -> Optional[pymysql.connections.Connection]:
@@ -57,21 +58,16 @@ def create_db_connection() -> Optional[pymysql.connections.Connection]:
 
 def load_csv_to_db(csv_file_path: str, table_name: str, db_connection: pymysql.connections.Connection) -> None:
     """
-    Load data from a CSV file into a specified database table.
+    Load data from a CSV file into a database table.
 
-    This function reads a CSV file using pandas, converts the data into a format suitable for SQL
-    insertion, and then inserts the data into the specified table in the database. It expects the
-    CSV file to have headers that match the database column names. In case of an error during data
-    loading, it logs an error message and rolls back any changes made during the transaction.
+    This function reads the specified CSV file and inserts its content into the given database table.
+    If running in dry run mode (determined by the DRY_RUN environment variable), the function will
+    log the operations but will not commit any changes to the database.
 
     Args:
         csv_file_path (str): Path to the CSV file.
         table_name (str): Name of the database table to load data into.
         db_connection (pymysql.connections.Connection): Active database connection object.
-
-    Note:
-        The database connection must be active and valid. The function commits changes to the database
-        and logs messages indicating the status of operations.
     """
     # Check if the CSV file exists
     if not os.path.exists(csv_file_path):
@@ -94,8 +90,14 @@ def load_csv_to_db(csv_file_path: str, table_name: str, db_connection: pymysql.c
         with db_connection.cursor() as cursor:
             # Execute the SQL command with the data
             cursor.executemany(insert_query, data_tuples)
-            db_connection.commit()
-            logging.info(f"Data from {csv_file_path} loaded into {table_name} successfully.")
+
+            # Check if dry run is enabled
+            if DRY_RUN:
+                db_connection.rollback()  # Roll back transaction in dry run mode
+                logging.info(f"Dry run: Data from {csv_file_path} not committed to {table_name}.")
+            else:
+                db_connection.commit()
+                logging.info(f"Data from {csv_file_path} loaded into {table_name} successfully.")
 
     except Exception as e:
         db_connection.rollback()
