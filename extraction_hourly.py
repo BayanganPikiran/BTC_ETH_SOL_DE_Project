@@ -126,4 +126,28 @@ def fetch_data(fsym: str, tsym: str, start_date: str, end_date: str = None, limi
             logging.error(f"Request exception for {fsym}: {e}")
             raise
 
-    return pd.DataFrame(data)
+    data_df = pd.DataFrame(data)
+
+    # Data Integrity Checks
+    # 1. Record Count Verification
+    expected_record_count =  # Calculate based on time range and data frequency
+    actual_record_count = len(data_df)
+    if actual_record_count != expected_record_count:
+        logging.warning(
+            f"Mismatch in expected and actual record count for {fsym}. Expected: {expected_record_count}, Actual: {actual_record_count}")
+
+    # 2. Timestamp Continuity Check
+    timestamps = pd.to_datetime(data_df['time'], unit='s')
+    if not timestamps.is_monotonic_increasing:
+        logging.warning(f"Timestamps are not continuous for {fsym}.")
+
+    # 3. Missing or Duplicate Data Check
+    if data_df.duplicated().any():
+        logging.warning(f"There are duplicate records in the data for {fsym}.")
+
+    # 4. Data Range Validation
+    if timestamps.min() < datetime.strptime(start_date, '%Y-%m-%d') or timestamps.max() > datetime.strptime(end_date,
+                                                                                                            '%Y-%m-%d'):
+        logging.warning(f"Data for {fsym} falls outside the specified date range.")
+
+    return data_df
