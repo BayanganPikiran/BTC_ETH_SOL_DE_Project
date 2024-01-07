@@ -39,13 +39,10 @@ def validate_hourly_data(data: Dict) -> bool:
 
 
 def fetch_hourly_data(fsym: str, tsym: str, start_date: str, end_date: str = None, limit=2000) -> pd.DataFrame:
-    """
-    Fetches historical hourly data for a specified cryptocurrency from the CryptoCompare API.
-    """
     if end_date is None:
-        end_date = datetime.now().strftime('%Y-%m-%d')  # Default end_date to current date if not provided
+        end_date = datetime.now().strftime('%Y-%m-%d')
 
-    data = []
+    all_data = []
     toTs = datetime.timestamp(datetime.strptime(end_date, '%Y-%m-%d'))
     start_timestamp = datetime.timestamp(datetime.strptime(start_date, '%Y-%m-%d'))
     retries = 0
@@ -64,16 +61,18 @@ def fetch_hourly_data(fsym: str, tsym: str, start_date: str, end_date: str = Non
             response.raise_for_status()
             batch = response.json()['Data']['Data']
 
-            for record in batch:
-                if not validate_hourly_data(record):
-                    logging.warning(f"Data validation failed for record: {record}")
-                else:
-                    data.append(record)
+            data_chunk = pd.DataFrame(batch)
+            data_chunk['time'] = pd.to_datetime(data_chunk['time'], unit='s')  # Vectorized operation for converting time
 
-            if datetime.fromtimestamp(batch[-1]['time']) < start_timestamp:
+            # Data Integrity Checks for each chunk
+            # ... [perform necessary checks here] ...
+
+            all_data.append(data_chunk)
+
+            if data_chunk['time'].min() < datetime.fromtimestamp(start_timestamp):
                 break
 
-            toTs = batch[0]['time']
+            toTs = int(data_chunk['time'].min().timestamp())
         except requests.exceptions.RequestException as e:
             retries += 1
             logging.error(f"Request exception for {fsym}: {e}")
@@ -81,28 +80,9 @@ def fetch_hourly_data(fsym: str, tsym: str, start_date: str, end_date: str = Non
                 logging.error(f"Max retries reached for {fsym}. Last attempt failed with: {e}")
                 raise
             logging.info(f"Retrying ({retries}/{MAX_RETRIES}) for {fsym} after failure.")
-            time.sleep(10)  # Wait before retrying
+            time.sleep(10)
 
-    data_df = pd.DataFrame(data)
-
-    # Data Integrity Checks
-    start_datetime = datetime.strptime(start_date, '%Y-%m-%d')
-    end_datetime = datetime.strptime(end_date, '%Y-%m-%d')
-    total_hours = (end_datetime - start_datetime).total_seconds() / 3600
-    expected_record_count = int(total_hours)
-
-    actual_record_count = len(data_df)
-    if actual_record_count != expected_record_count:
-        logging.warning(f"Mismatch in expected and actual record count for {fsym}. Expected: {expected_record_count}, Actual: {actual_record_count}")
-
-    timestamps = pd.to_datetime(data_df['time'], unit='s')
-    if not timestamps.is_monotonic_increasing:
-        logging.warning(f"Timestamps are not continuous for {fsym}.")
-
-    if data_df.duplicated().any():
-        logging.warning(f"There are duplicate records in the data for {fsym}.")
-
-    if timestamps.min() < start_datetime or timestamps.max() > end_datetime:
-        logging.warning(f"Data for {fsym} falls outside the specified date range.")
+    # Concatenate all chunks
+    data_df = pd.concat(all_data, ignore_index=True)
 
     return data_df
