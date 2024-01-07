@@ -114,6 +114,7 @@ def setup_logging() -> None:
     console.setFormatter(formatter)
     logging.getLogger("").addHandler(console)
 
+
 if __name__ == "__main__":
     setup_logging()
     logging.info("Starting script execution...")
@@ -128,9 +129,9 @@ if __name__ == "__main__":
         try:
             # Load data from CSV files into database tables
             # In dry run mode, these operations will not commit any changes to the database
-            load_csv_to_db(BTC_CSV_PATH, 'Bitcoin_records', db_connection)
-            load_csv_to_db(ETH_CSV_PATH, 'Ethereum_records', db_connection)
-            load_csv_to_db(SOL_CSV_PATH, 'Solana_records', db_connection)
+            load_csv_to_db(BTC_CSV_PATH, 'BTC_daily', db_connection)
+            load_csv_to_db(ETH_CSV_PATH, 'ETH_daily', db_connection)
+            load_csv_to_db(SOL_CSV_PATH, 'SOL_daily', db_connection)
         except Exception as e:
             logging.error(f"An unexpected error occurred: {e}")
         finally:
@@ -142,4 +143,3 @@ if __name__ == "__main__":
         logging.error("Failed to establish a database connection.")
 
     logging.info("Script execution completed.")
-
