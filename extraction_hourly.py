@@ -16,6 +16,7 @@ if not API_KEY:
 
 # API endpoint for hourly data
 BASE_URL = 'https://min-api.cryptocompare.com/data/v2/histohour'
+MAX_RETRIES = 5  # Maximum number of retries for API requests
 
 
 def validate_data(data: Dict) -> bool:
@@ -41,6 +42,7 @@ def fetch_data(fsym: str, tsym: str, start_date: str, end_date: str = None, limi
     """
     Fetches historical hourly data for a specified cryptocurrency from the CryptoCompare API.
     """
+    retries = 0  # Initialize retries for each function call
     if end_date is None:
         end_date = datetime.now().strftime('%Y-%m-%d')  # Default end_date to current date if not provided
 
@@ -71,12 +73,18 @@ def fetch_data(fsym: str, tsym: str, start_date: str, end_date: str = None, limi
             if datetime.fromtimestamp(batch[-1]['time']) < datetime.fromtimestamp(start_timestamp):
                 break
 
-            toTs = batch[0]['time']  # Prepare toTs for the next call
+            toTs = batch[0]['time']
         except requests.exceptions.RequestException as e:
             logging.error(f"Request exception for {fsym}: {e}")
-            raise
+            if retries >= MAX_RETRIES:
+                logging.error(f"Max retries reached for {fsym}. Last attempt failed with: {e}")
+                raise
+            retries += 1
+            logging.info(f"Retrying ({retries}/{MAX_RETRIES}) for {fsym} after failure.")
+            time.sleep(10)  # Wait before retrying
 
-    return pd.DataFrame(data)
+        logging.info(f"Data successfully fetched for {fsym}.")
+        return pd.DataFrame(data)
 
 
 def fetch_data(fsym: str, tsym: str, start_date: str, end_date: str = None, limit=2000) -> pd.DataFrame:
