@@ -18,6 +18,25 @@ if not API_KEY:
 BASE_URL = 'https://min-api.cryptocompare.com/data/v2/histohour'
 
 
+def validate_data(data: Dict) -> bool:
+    """
+    Validates whether the required keys are present in a given data record.
+
+    This function checks if each of the required keys for a valid cryptocurrency data record
+    is present in the provided data dictionary. It's used to ensure the integrity and completeness
+    of the data fetched from the API.
+
+    Parameters:
+    - data (dict): The data record to validate, typically a dictionary representing a single
+      cryptocurrency data point (e.g., daily historical data for BTC).
+
+    Returns:
+    - bool: Returns True if all required keys are present in the data, False otherwise.
+    """
+    required_keys = ['time', 'high', 'low', 'open', 'close', 'volumefrom', 'volumeto']
+    return all(key in data for key in required_keys)
+
+
 def fetch_data(fsym: str, tsym: str, start_date: str, end_date: str = None, limit=2000) -> pd.DataFrame:
     """
     Fetches historical hourly data for a specified cryptocurrency from the CryptoCompare API.
