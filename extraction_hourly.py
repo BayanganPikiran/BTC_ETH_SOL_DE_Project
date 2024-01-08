@@ -120,16 +120,31 @@ def save_data_to_csv(data_df: pd.DataFrame, coin_symbol: str):
 
 
 def main(start_date, end_date):
+    # Logging configuration
+    logging.basicConfig(filename='crypto_data_fetch.log', level=logging.INFO,
+                        format='%(asctime)s:%(levelname)s:%(message)s')
+
     # Start performance monitoring
     start_time = time.time()
     memory_before = psutil.Process().memory_info().rss / (1024 * 1024)  # Memory usage in MB
 
-    # Function call to fetch data
-    btc_data = fetch_hourly_data('BTC', 'USD', start_date, end_date)
-    # You can include similar calls for other cryptocurrencies here
+    try:
+        # Fetch and save data for BTC
+        btc_data = fetch_hourly_data('BTC', 'USD', start_date, end_date)
+        save_data_to_csv(btc_data, 'BTC')
 
-    # Save data to CSV
-    save_data_to_csv(btc_data, 'BTC')
+        # Fetch and save data for ETH
+        eth_data = fetch_hourly_data('ETH', 'USD', start_date, end_date)
+        save_data_to_csv(eth_data, 'ETH')
+
+        # Fetch and save data for SOL
+        sol_data = fetch_hourly_data('SOL', 'USD', start_date, end_date)
+        save_data_to_csv(sol_data, 'SOL')
+
+    except Exception as e:
+        logging.error(f"Error occurred during data fetching or saving: {e}")
+        logging.error(traceback.format_exc())
+        return  # Exit the function in case of error
 
     # End performance monitoring
     end_time = time.time()
@@ -139,7 +154,6 @@ def main(start_date, end_date):
     logging.info(f"Execution Time: {end_time - start_time} seconds")
     logging.info(f"Memory Usage: {memory_after - memory_before} MB")
 
-
 if __name__ == "__main__":
     # Choose dates based on the mode
     start_date = TEST_START_DATE if IS_TEST_MODE else FULL_START_DATE
@@ -147,3 +161,4 @@ if __name__ == "__main__":
 
     # Running the main function
     main(start_date, end_date)
+
