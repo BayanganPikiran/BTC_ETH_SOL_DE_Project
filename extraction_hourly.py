@@ -7,6 +7,18 @@ from datetime import datetime
 from dotenv import load_dotenv
 import os
 import traceback  # For detailed error logging
+import psutil
+
+# Test run dates (e.g., one week)
+TEST_START_DATE = '2023-01-01'
+TEST_END_DATE = '2023-01-08'
+
+# Full run dates
+FULL_START_DATE = '2020-04-10'
+FULL_END_DATE = '2024-01-03'
+
+# Toggle for test mode
+IS_TEST_MODE = True  # Set to False for a full run
 
 load_dotenv()  # Load the API key from the .env file
 
@@ -62,7 +74,8 @@ def fetch_hourly_data(fsym: str, tsym: str, start_date: str, end_date: str = Non
             batch = response.json()['Data']['Data']
 
             data_chunk = pd.DataFrame(batch)
-            data_chunk['time'] = pd.to_datetime(data_chunk['time'], unit='s')  # Vectorized operation for converting time
+            data_chunk['time'] = pd.to_datetime(data_chunk['time'],
+                                                unit='s')  # Vectorized operation for converting time
 
             # Data Integrity Checks for each chunk
             # ... [perform necessary checks here] ...
@@ -86,3 +99,51 @@ def fetch_hourly_data(fsym: str, tsym: str, start_date: str, end_date: str = Non
     data_df = pd.concat(all_data, ignore_index=True)
 
     return data_df
+
+
+def save_data_to_csv(data_df: pd.DataFrame, coin_symbol: str):
+    """
+    Saves the given DataFrame to a CSV file with the specified naming convention.
+
+    Parameters:
+    - data_df (pd.DataFrame): The DataFrame containing cryptocurrency data.
+    - coin_symbol (str): The symbol of the cryptocurrency (e.g., 'BTC').
+    """
+    filename = f"{coin_symbol}_hourly_data.csv"
+    data_df.to_csv(filename, index=False)
+    logging.info(f"Data for {coin_symbol} saved to {filename}")
+
+
+# Example of how to call the function
+# btc_data = fetch_hourly_data('BTC', 'USD', '2020-04-10', '2024-01-03')
+# save_data_to_csv(btc_data, 'BTC')
+
+
+def main(start_date, end_date):
+    # Start performance monitoring
+    start_time = time.time()
+    memory_before = psutil.Process().memory_info().rss / (1024 * 1024)  # Memory usage in MB
+
+    # Function call to fetch data
+    btc_data = fetch_hourly_data('BTC', 'USD', start_date, end_date)
+    # You can include similar calls for other cryptocurrencies here
+
+    # Save data to CSV
+    save_data_to_csv(btc_data, 'BTC')
+
+    # End performance monitoring
+    end_time = time.time()
+    memory_after = psutil.Process().memory_info().rss / (1024 * 1024)  # Memory usage in MB
+
+    # Logging performance metrics
+    logging.info(f"Execution Time: {end_time - start_time} seconds")
+    logging.info(f"Memory Usage: {memory_after - memory_before} MB")
+
+
+if __name__ == "__main__":
+    # Choose dates based on the mode
+    start_date = TEST_START_DATE if IS_TEST_MODE else FULL_START_DATE
+    end_date = TEST_END_DATE if IS_TEST_MODE else FULL_END_DATE
+
+    # Running the main function
+    main(start_date, end_date)
