@@ -74,11 +74,7 @@ def fetch_hourly_data(fsym: str, tsym: str, start_date: str, end_date: str = Non
             batch = response.json()['Data']['Data']
 
             data_chunk = pd.DataFrame(batch)
-            data_chunk['time'] = pd.to_datetime(data_chunk['time'],
-                                                unit='s')  # Vectorized operation for converting time
-
-            # Data Integrity Checks for each chunk
-            # ... [perform necessary checks here] ...
+            data_chunk['time'] = pd.to_datetime(data_chunk['time'], unit='s')  # Vectorized operation for converting time
 
             all_data.append(data_chunk)
 
@@ -97,6 +93,18 @@ def fetch_hourly_data(fsym: str, tsym: str, start_date: str, end_date: str = Non
 
     # Concatenate all chunks
     data_df = pd.concat(all_data, ignore_index=True)
+
+    # Data Integrity Checks
+    # Timestamp Continuity Check
+    expected_time_range = pd.date_range(start=start_date, end=end_date, freq='H')
+    actual_time_range = pd.to_datetime(data_df['time']).dt.floor('H')
+    missing_times = expected_time_range.difference(actual_time_range)
+    if not missing_times.empty:
+        logging.warning(f"Missing timestamps for {fsym}: {missing_times}")
+
+    # Duplicate Record Check
+    if data_df.duplicated().any():
+        logging.warning(f"There are duplicate records in the data for {fsym}")
 
     return data_df
 
@@ -154,6 +162,7 @@ def main(start_date, end_date):
     logging.info(f"Execution Time: {end_time - start_time} seconds")
     logging.info(f"Memory Usage: {memory_after - memory_before} MB")
 
+
 if __name__ == "__main__":
     # Choose dates based on the mode
     start_date = TEST_START_DATE if IS_TEST_MODE else FULL_START_DATE
@@ -161,4 +170,3 @@ if __name__ == "__main__":
 
     # Running the main function
     main(start_date, end_date)
-
