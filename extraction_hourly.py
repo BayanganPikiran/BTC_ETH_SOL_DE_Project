@@ -1,4 +1,21 @@
-from typing import Dict, Tuple
+"""
+Cryptocurrency Data Extraction Script
+
+This script fetches historical hourly trading data for cryptocurrencies (BTC, ETH, and SOL)
+from the CryptoCompare API. It processes and saves the data into CSV files. The script includes
+performance monitoring and error handling to ensure robust and reliable data extraction.
+
+Prerequisites:
+- An API key for CryptoCompare stored in an .env file.
+- Python libraries: requests, pandas, psutil, and python-dotenv.
+
+Usage:
+- Set IS_TEST_MODE to True for a test run with sample dates or False for a full data extraction.
+- Adjust TEST_START_DATE, TEST_END_DATE, FULL_START_DATE, and FULL_END_DATE as needed.
+"""
+
+
+from typing import Dict
 import requests
 import logging
 import pandas as pd
@@ -18,7 +35,7 @@ FULL_START_DATE = '2020-04-10'
 FULL_END_DATE = '2024-01-03'
 
 # Toggle for test mode
-IS_TEST_MODE = True  # Set to False for a full run
+IS_TEST_MODE = False # Set to False for a full run
 
 load_dotenv()  # Load the API key from the .env file
 
