@@ -74,7 +74,8 @@ def fetch_hourly_data(fsym: str, tsym: str, start_date: str, end_date: str = Non
             batch = response.json()['Data']['Data']
 
             data_chunk = pd.DataFrame(batch)
-            data_chunk['time'] = pd.to_datetime(data_chunk['time'], unit='s')  # Vectorized operation for converting time
+            data_chunk['time'] = pd.to_datetime(data_chunk['time'],
+                                                unit='s')  # Vectorized operation for converting time
 
             all_data.append(data_chunk)
 
@@ -127,7 +128,18 @@ def save_data_to_csv(data_df: pd.DataFrame, coin_symbol: str):
 # save_data_to_csv(btc_data, 'BTC')
 
 
-def main(start_date, end_date):
+def main(start_date: str, end_date: str) -> None:
+    """
+    Main function to fetch and save hourly cryptocurrency data.
+
+    This function handles the performance monitoring, data fetching, saving, and logging for
+    cryptocurrencies (BTC, ETH, SOL). It fetches the data for the specified date range and
+    saves it in CSV format.
+
+    Parameters:
+    - start_date (str): The start date for fetching data in 'YYYY-MM-DD' format.
+    - end_date (str): The end date for fetching data in 'YYYY-MM-DD' format.
+    """
     # Logging configuration
     logging.basicConfig(filename='crypto_data_fetch.log', level=logging.INFO,
                         format='%(asctime)s:%(levelname)s:%(message)s')
