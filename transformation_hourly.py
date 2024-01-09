@@ -147,21 +147,28 @@ def save_transformed_data(data: pd.DataFrame, output_csv_path: str) -> None:
 
 
 def transform_hourly_data(csv_path: str, coin_symbol: str) -> None:
+    logging.info(f"Starting data transformation for {coin_symbol} using file {csv_path}")
+
     data = read_csv_file(csv_path)
     if data.empty:
+        logging.error(f"No data found in {csv_path} or failed to read file.")
         return
 
-    required_columns = [TIME_COLUMN, HIGH_COLUMN, LOW_COLUMN, OPEN_COLUMN, CLOSE_COLUMN, VOL_NATIVE_COLUMN,
-                        VOL_USD_COLUMN]
+    required_columns = [TIME_COLUMN, HIGH_COLUMN, LOW_COLUMN, OPEN_COLUMN, CLOSE_COLUMN, VOL_NATIVE_COLUMN, VOL_USD_COLUMN]
     numeric_columns = [HIGH_COLUMN, LOW_COLUMN, OPEN_COLUMN, CLOSE_COLUMN]
 
     if not validate_data(data, required_columns, numeric_columns):
+        logging.error(f"Data validation failed for {csv_path}.")
         return
 
     data = transform_time_column(data, TIME_COLUMN)
     data = generate_record_id(data, coin_symbol)
     data = rename_and_reorder_columns(data, coin_symbol)
-    save_transformed_data(data, f"transformed_{coin_symbol}_hourly_data.csv")
+
+    output_csv_path = f"transformed_{coin_symbol}_hourly_data.csv"
+    save_transformed_data(data, output_csv_path)
+
+    logging.info(f"Data transformation completed for {coin_symbol} and saved to {output_csv_path}")
 
 
 if __name__ == '__main__':
