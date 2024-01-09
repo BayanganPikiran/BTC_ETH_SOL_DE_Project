@@ -48,8 +48,11 @@ def transform_hourly_data(csv_path: str, coin_symbol: str) -> None:
     # Drop the original 'time' column
     data.drop(columns=[TIME_COLUMN], inplace=True)
 
-    # Generate record_id
+    # Generate record_id with an hourly indicator
     data['record_id'] = [f"{coin_symbol}_H{i:05d}" for i in range(1, len(data) + 1)]
+
+    # Insert coin_symbol column as the second column
+    data.insert(1, 'coin_symbol', coin_symbol)
 
     # Rename columns for hourly trade volume
     data.rename(columns={
