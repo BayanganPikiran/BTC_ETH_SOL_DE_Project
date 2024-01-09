@@ -53,19 +53,33 @@ def read_csv_file(csv_path: str) -> pd.DataFrame:
 
 
 def validate_data(data: pd.DataFrame, required_columns: list, numeric_columns: list) -> bool:
-    if not set(required_columns).issubset(data.columns):
-        missing_columns = set(required_columns) - set(data.columns)
-        logging.error(f"Missing required columns {missing_columns}.")
-        return False
+    logging.info("Starting data validation.")
 
+    # Check for required columns
+    missing_columns = set(required_columns) - set(data.columns)
+    if missing_columns:
+        logging.error(f"Missing required columns: {missing_columns}")
+        return False
+    else:
+        logging.info("All required columns are present.")
+
+    # Check for missing values
     if data.isnull().any().any():
-        logging.warning("There are missing values.")
+        missing_info = data.isnull().sum()
+        logging.warning(f"Missing values found: {missing_info}")
+    else:
+        logging.info("No missing values found.")
 
+    # Validate numeric columns for appropriate ranges
     if data[numeric_columns].lt(0).any().any():
-        logging.error("Negative values found in numeric columns.")
+        logging.error(f"Negative values found in numeric columns: {numeric_columns}")
         return False
+    else:
+        logging.info("Numeric columns have valid values.")
 
+    logging.info("Data validation completed successfully.")
     return True
+
 
 
 def transform_time_column(data: pd.DataFrame, time_column: str) -> pd.DataFrame:
