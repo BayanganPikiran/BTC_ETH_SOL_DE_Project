@@ -38,8 +38,11 @@ def setup_logging() -> None:
 
 
 def read_csv_file(csv_path: str) -> pd.DataFrame:
+    logging.info(f"Reading CSV file: {csv_path}")
     try:
-        return pd.read_csv(csv_path)
+        data = pd.read_csv(csv_path)
+        logging.info(f"Successfully read {len(data)} rows from {csv_path}")
+        return data
     except FileNotFoundError:
         logging.error(f"File {csv_path} not found.")
     except pd.errors.ParserError:
