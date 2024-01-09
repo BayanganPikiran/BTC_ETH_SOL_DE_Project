@@ -37,58 +37,83 @@ def setup_logging() -> None:
                             ])
 
 
-def transform_hourly_data(csv_path: str, coin_symbol: str) -> None:
-    # Error handling for reading the CSV file
+def read_csv_file(csv_path: str) -> pd.DataFrame:
     try:
-        data = pd.read_csv(csv_path)
+        return pd.read_csv(csv_path)
     except FileNotFoundError:
-        logging.error(f"File {csv_path} not found. Skipping this file.")
-        return
+        logging.error(f"File {csv_path} not found.")
     except pd.errors.ParserError:
-        logging.error(f"Error parsing {csv_path}. Check if the file is in the correct CSV format.")
-        return
+        logging.error(f"Error parsing {csv_path}.")
     except Exception as e:
-        logging.error(f"An unexpected error occurred while reading {csv_path}: {e}")
-        return
+        logging.error(f"Unexpected error: {e}")
+    return pd.DataFrame()
 
-    # Transform 'time' column to 'date' and 'hour'
-    data['date'] = pd.to_datetime(data[TIME_COLUMN]).dt.strftime(DATE_FORMAT)
-    data['hour'] = pd.to_datetime(data[TIME_COLUMN]).dt.strftime(HOUR_FORMAT)
 
-    # Drop the original 'time' column
-    data.drop(columns=[TIME_COLUMN], inplace=True)
+def validate_data(data: pd.DataFrame, required_columns: list, numeric_columns: list) -> bool:
+    if not set(required_columns).issubset(data.columns):
+        missing_columns = set(required_columns) - set(data.columns)
+        logging.error(f"Missing required columns {missing_columns}.")
+        return False
 
-    # Generate record_id with an hourly indicator
+    if data.isnull().any().any():
+        logging.warning("There are missing values.")
+
+    if data[numeric_columns].lt(0).any().any():
+        logging.error("Negative values found in numeric columns.")
+        return False
+
+    return True
+
+
+def transform_time_column(data: pd.DataFrame, time_column: str) -> pd.DataFrame:
+    data['date'] = pd.to_datetime(data[time_column]).dt.strftime(DATE_FORMAT)
+    data['hour'] = pd.to_datetime(data[time_column]).dt.strftime(HOUR_FORMAT)
+    return data.drop(columns=[time_column])
+
+
+def generate_record_id(data: pd.DataFrame, coin_symbol: str) -> pd.DataFrame:
     data['record_id'] = [f"{coin_symbol}_H{i:05d}" for i in range(1, len(data) + 1)]
+    return data
 
-    # Insert coin_symbol column as the second column
+
+def rename_and_reorder_columns(data: pd.DataFrame, coin_symbol: str) -> pd.DataFrame:
     data.insert(1, 'coin_symbol', coin_symbol)
-
-    # Rename columns for hourly trade volume
     data.rename(columns={
         VOL_NATIVE_COLUMN: 'hr_trade_vol_native',
         VOL_USD_COLUMN: 'hr_trade_vol_USD'
     }, inplace=True)
-
-    # Reorder columns
     column_order = [
         'record_id', 'coin_symbol', 'date', 'hour',
         OPEN_COLUMN, LOW_COLUMN, HIGH_COLUMN, CLOSE_COLUMN,
         'hr_trade_vol_native', 'hr_trade_vol_USD'
     ]
-    data = data[column_order]
+    return data[column_order]
 
-    # Error handling for writing the transformed data to a new CSV
-    output_csv_path = f"transformed_{coin_symbol}_hourly_data.csv"
+
+def save_transformed_data(data: pd.DataFrame, output_csv_path: str) -> None:
     try:
         data.to_csv(output_csv_path, index=False)
-        logging.info(f"Transformed data successfully saved to {output_csv_path}")
-    except IOError:
-        logging.error(f"Unable to write to {output_csv_path}. Check write permissions.")
-        return
+        logging.info(f"Data saved to {output_csv_path}")
     except Exception as e:
-        logging.error(f"An unexpected error occurred while writing to {output_csv_path}: {e}")
+        logging.error(f"Error saving data: {e}")
+
+
+def transform_hourly_data(csv_path: str, coin_symbol: str) -> None:
+    data = read_csv_file(csv_path)
+    if data.empty:
         return
+
+    required_columns = [TIME_COLUMN, HIGH_COLUMN, LOW_COLUMN, OPEN_COLUMN, CLOSE_COLUMN, VOL_NATIVE_COLUMN,
+                        VOL_USD_COLUMN]
+    numeric_columns = [HIGH_COLUMN, LOW_COLUMN, OPEN_COLUMN, CLOSE_COLUMN]
+
+    if not validate_data(data, required_columns, numeric_columns):
+        return
+
+    data = transform_time_column(data, TIME_COLUMN)
+    data = generate_record_id(data, coin_symbol)
+    data = rename_and_reorder_columns(data, coin_symbol)
+    save_transformed_data(data, f"transformed_{coin_symbol}_hourly_data.csv")
 
 
 if __name__ == '__main__':
