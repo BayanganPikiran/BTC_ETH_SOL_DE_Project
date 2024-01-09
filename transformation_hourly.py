@@ -81,38 +81,69 @@ def validate_data(data: pd.DataFrame, required_columns: list, numeric_columns: l
     return True
 
 
-
 def transform_time_column(data: pd.DataFrame, time_column: str) -> pd.DataFrame:
-    data['date'] = pd.to_datetime(data[time_column]).dt.strftime(DATE_FORMAT)
-    data['hour'] = pd.to_datetime(data[time_column]).dt.strftime(HOUR_FORMAT)
-    return data.drop(columns=[time_column])
+    logging.info("Starting transformation of the time column.")
+
+    try:
+        data['date'] = pd.to_datetime(data[time_column]).dt.strftime(DATE_FORMAT)
+        data['hour'] = pd.to_datetime(data[time_column]).dt.strftime(HOUR_FORMAT)
+        data = data.drop(columns=[time_column])
+        logging.info("Time column transformed into 'date' and 'hour' columns.")
+    except Exception as e:
+        logging.error(f"Error transforming time column: {e}")
+
+    return data
 
 
 def generate_record_id(data: pd.DataFrame, coin_symbol: str) -> pd.DataFrame:
-    data['record_id'] = [f"{coin_symbol}_H{i:05d}" for i in range(1, len(data) + 1)]
+    logging.info("Starting generation of record IDs.")
+
+    try:
+        data['record_id'] = [f"{coin_symbol}_H{i:05d}" for i in range(1, len(data) + 1)]
+        logging.info("Record IDs generated successfully.")
+    except Exception as e:
+        logging.error(f"Error generating record IDs: {e}")
+
     return data
 
 
 def rename_and_reorder_columns(data: pd.DataFrame, coin_symbol: str) -> pd.DataFrame:
-    data.insert(1, 'coin_symbol', coin_symbol)
-    data.rename(columns={
-        VOL_NATIVE_COLUMN: 'hr_trade_vol_native',
-        VOL_USD_COLUMN: 'hr_trade_vol_USD'
-    }, inplace=True)
-    column_order = [
-        'record_id', 'coin_symbol', 'date', 'hour',
-        OPEN_COLUMN, LOW_COLUMN, HIGH_COLUMN, CLOSE_COLUMN,
-        'hr_trade_vol_native', 'hr_trade_vol_USD'
-    ]
-    return data[column_order]
+    logging.info("Starting renaming and reordering of columns.")
+
+    try:
+        # Insert coin_symbol column
+        data.insert(1, 'coin_symbol', coin_symbol)
+
+        # Rename columns
+        data.rename(columns={
+            VOL_NATIVE_COLUMN: 'hr_trade_vol_native',
+            VOL_USD_COLUMN: 'hr_trade_vol_USD'
+        }, inplace=True)
+
+        # Define the new column order
+        column_order = [
+            'record_id', 'coin_symbol', 'date', 'hour',
+            OPEN_COLUMN, LOW_COLUMN, HIGH_COLUMN, CLOSE_COLUMN,
+            'hr_trade_vol_native', 'hr_trade_vol_USD'
+        ]
+
+        # Reorder the columns
+        data = data[column_order]
+        logging.info("Columns renamed and reordered successfully.")
+    except Exception as e:
+        logging.error(f"Error in renaming and reordering columns: {e}")
+
+    return data
 
 
 def save_transformed_data(data: pd.DataFrame, output_csv_path: str) -> None:
+    logging.info(f"Saving transformed data to {output_csv_path}")
+
     try:
         data.to_csv(output_csv_path, index=False)
-        logging.info(f"Data saved to {output_csv_path}")
+        logging.info(f"Data successfully saved to {output_csv_path}")
     except Exception as e:
-        logging.error(f"Error saving data: {e}")
+        logging.error(f"Error saving data to {output_csv_path}: {e}")
 
 
 def transform_hourly_data(csv_path: str, coin_symbol: str) -> None:
