@@ -38,8 +38,18 @@ def setup_logging() -> None:
 
 
 def transform_hourly_data(csv_path: str, coin_symbol: str) -> None:
-    # Read CSV file
-    data = pd.read_csv(csv_path)
+    # Error handling for reading the CSV file
+    try:
+        data = pd.read_csv(csv_path)
+    except FileNotFoundError:
+        logging.error(f"File {csv_path} not found. Skipping this file.")
+        return
+    except pd.errors.ParserError:
+        logging.error(f"Error parsing {csv_path}. Check if the file is in the correct CSV format.")
+        return
+    except Exception as e:
+        logging.error(f"An unexpected error occurred while reading {csv_path}: {e}")
+        return
 
     # Transform 'time' column to 'date' and 'hour'
     data['date'] = pd.to_datetime(data[TIME_COLUMN]).dt.strftime(DATE_FORMAT)
@@ -68,15 +78,21 @@ def transform_hourly_data(csv_path: str, coin_symbol: str) -> None:
     ]
     data = data[column_order]
 
-    # Handle saving the transformed data
+    # Error handling for writing the transformed data to a new CSV
     output_csv_path = f"transformed_{coin_symbol}_hourly_data.csv"
-    data.to_csv(output_csv_path, index=False)
+    try:
+        data.to_csv(output_csv_path, index=False)
+        logging.info(f"Transformed data successfully saved to {output_csv_path}")
+    except IOError:
+        logging.error(f"Unable to write to {output_csv_path}. Check write permissions.")
+        return
+    except Exception as e:
+        logging.error(f"An unexpected error occurred while writing to {output_csv_path}: {e}")
+        return
 
-
-# Example usage
-transform_hourly_data(INPUT_BTC_CSV_PATH, 'BTC')
-transform_hourly_data(INPUT_ETH_CSV_PATH, 'ETH')
-transform_hourly_data(INPUT_SOL_CSV_PATH, 'SOL')
 
 if __name__ == '__main__':
     setup_logging()
+    transform_hourly_data(INPUT_BTC_CSV_PATH, 'BTC')
+    transform_hourly_data(INPUT_ETH_CSV_PATH, 'ETH')
+    transform_hourly_data(INPUT_SOL_CSV_PATH, 'SOL')
