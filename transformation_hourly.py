@@ -47,8 +47,8 @@ HIGH_COLUMN = 'high'
 LOW_COLUMN = 'low'
 OPEN_COLUMN = 'open'
 CLOSE_COLUMN = 'close'
-VOL_NATIVE_COLUMN = 'VOL_NATIVE'  # Updated from 'volumefrom'
-VOL_USD_COLUMN = 'VOL_USD'  # Updated from 'volumeto'
+VOL_NATIVE_COLUMN = 'volumefrom'  # Updated from 'volumefrom'
+VOL_USD_COLUMN = 'volumeto'  # Updated from 'volumeto'
 
 # Date format constants
 DATE_FORMAT = '%Y-%m-%d'
@@ -166,26 +166,27 @@ def validate_data(data: pd.DataFrame, required_columns: list, numeric_columns: l
 
 def transform_time_column(data: pd.DataFrame, time_column: str) -> pd.DataFrame:
     """
-        Transforms the 'time' column of the DataFrame into separate 'date' and 'hour' columns.
+    Transforms the 'time' column of the DataFrame into separate 'date' and 'hour' columns.
 
-        Parameters:
-        data (pd.DataFrame): The DataFrame containing the time data.
-        time_column (str): The name of the column in the DataFrame that contains time data.
+    Parameters:
+    data (pd.DataFrame): The DataFrame containing the time data.
+    time_column (str): The name of the column in the DataFrame that contains time data.
 
-        Returns:
-        pd.DataFrame: The modified DataFrame with the 'time' column split into 'date' and 'hour'.
+    Returns:
+    pd.DataFrame: The modified DataFrame with the 'time' column split into 'date' and 'hour'.
 
-        The function tries to parse the 'time' column as a datetime object and then formats
-        it into 'date' and 'hour' based on the DATE_FORMAT and HOUR_FORMAT constants.
-        It logs an error and returns the original DataFrame if any exception occurs.
-        """
+    The function tries to parse the 'time' column as a datetime object and then formats
+    it into 'date' and 'hour' based on the DATE_FORMAT and a military time format for 'hour'.
+    It logs an error and returns the original DataFrame if any exception occurs.
+    """
     logging.info("Starting transformation of the time column.")
 
     try:
         data['date'] = pd.to_datetime(data[time_column]).dt.strftime(DATE_FORMAT)
-        data['hour'] = pd.to_datetime(data[time_column]).dt.strftime(HOUR_FORMAT)
+        # Formatting 'hour' to military time format as a string "HH:00"
+        data['hour'] = pd.to_datetime(data[time_column]).dt.hour.astype(str).str.zfill(2) + ":00"
         data = data.drop(columns=[time_column])
-        logging.info("Time column transformed into 'date' and 'hour' columns.")
+        logging.info("Time column transformed into 'date' and military time 'hour' columns.")
     except Exception as e:
         logging.error(f"Error transforming time column: {e}")
 
