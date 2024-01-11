@@ -1,3 +1,27 @@
+"""
+Data Loader for Hourly Trade Records of BTC, ETH, and SOL
+
+This script is designed to load hourly trading data for cryptocurrencies (Bitcoin, Ethereum, Solana) into a PostgreSQL
+database. It reads data from CSV files, validates the file paths, and inserts the data into specified database tables.
+
+The script utilizes environment variables for database configuration and CSV file paths. It supports a dry run feature
+for testing without committing data to the database.
+
+Dependencies:
+- psycopg2: For PostgreSQL database connection.
+- pandas: For reading and processing CSV files.
+- python-dotenv: For loading environment variables from a .env file.
+- os: For file path and environment variable operations.
+- logging: For logging information and errors.
+
+Usage:
+Set the required environment variables and run the script. The script reads the specified CSV files and loads the data into the database tables.
+
+Author: Andre La Flamme
+Date: January 11, 2024
+"""
+
+
 import psycopg2
 import pandas as pd
 from dotenv import load_dotenv
@@ -25,8 +49,18 @@ DRY_RUN = os.getenv('DRY_RUN', 'False').lower() == 'true'
 
 
 def setup_logging() -> None:
-    """
+     """
     Set up logging configuration.
+
+    This function configures logging to output messages both to the console and a log file.
+    It ensures that if the logging configuration is already set, it does not get overwritten.
+
+    Logging Level: INFO
+    Log Format: Timestamp, Log Level, and Message
+    Log File: hourly_loading_script.log (appended mode)
+
+    Returns:
+    None
     """
     if not logging.getLogger().hasHandlers():
         logging.basicConfig(
@@ -44,7 +78,13 @@ def setup_logging() -> None:
 
 def create_db_connection():
     """
-    Placeholder for future docstring.
+    Create and return a database connection using psycopg2.
+
+    This function attempts to establish a connection to a PostgreSQL database using
+    credentials obtained from environment variables. It logs the status of the connection attempt.
+
+    Returns:
+        psycopg2.extensions.connection: A database connection object if successful, None otherwise.
     """
     try:
         connection = psycopg2.connect(
@@ -63,15 +103,17 @@ def create_db_connection():
 
 def read_csv_data(csv_file_path: str) -> Optional[pd.DataFrame]:
     """
-    Reads data from a CSV file into a pandas DataFrame.
+     Reads data from a CSV file into a pandas DataFrame.
 
-    Args:
-    csv_file_path (str): The file path of the CSV file to be read.
+     Args:
+         csv_file_path (str): The file path of the CSV file to be read.
 
-    Returns:
-    Optional[pd.DataFrame]: DataFrame containing the data read from the CSV file,
-    or None if an error occurs during file reading.
-    """
+     Returns:
+         Optional[pd.DataFrame]: DataFrame containing the data read from the CSV file,
+         or None if an error occurs during file reading.
+
+     This function logs the status of the file reading process and any errors encountered.
+     """
     try:
         logging.info(f"Reading data from {csv_file_path}")
         data = pd.read_csv(csv_file_path)
@@ -84,48 +126,20 @@ def read_csv_data(csv_file_path: str) -> Optional[pd.DataFrame]:
 
 def load_csv_to_db_hourly(csv_file_path: str, table_name: str, db_connection: psycopg2.extensions.connection) -> None:
     """
-    Placeholder for future docstring.
-    """
+    Loads data from a CSV file into a PostgreSQL database table.
 
-    # Validate CSV File Path
-    if not os.path.exists(csv_file_path):
-        logging.error(f"CSV file not found: {csv_file_path}")
-        return
+    This function reads cryptocurrency trading data from a specified CSV file and loads it into a given table.
+    It handles data conversion and database insertion, with support for a dry run mode where changes are not committed.
 
-    # Read CSV File into DataFrame using the new read_csv_data function
-    data = read_csv_data(csv_file_path)
-    if data is None or data.empty:
-        logging.error(f"Error reading or empty data in the CSV file {csv_file_path}")
-        return
+    Args:
+        csv_file_path (str): Path to the CSV file containing the hourly data.
+        table_name (str): Name of the database table where data will be inserted.
+        db_connection (psycopg2.extensions.connection): Active database connection.
 
-    try:
-        # Prepare SQL Insert Query
-        columns = ', '.join(data.columns.tolist())
-        placeholders = ', '.join(['%s'] * len(data.columns))
-        insert_query = f"INSERT INTO {table_name} ({columns}) VALUES ({placeholders})"
+    Returns:
+    None
 
-        # Convert DataFrame to Tuples
-        data_tuples = [tuple(row) for row in data.to_numpy()]
-
-        # Database Insertion
-        with db_connection.cursor() as cursor:
-            cursor.executemany(insert_query, data_tuples)
-            if DRY_RUN:
-                db_connection.rollback()
-                logging.info(f"Dry run: Data from {csv_file_path} not committed to {table_name}.")
-            else:
-                db_connection.commit()
-                logging.info(f"Data from {csv_file_path} loaded into {table_name} successfully.")
-
-    except Exception as e:
-        if db_connection:
-            db_connection.rollback()
-        logging.error(f"An unexpected error occurred in load_csv_to_db_hourly: {e}")
-
-
-def load_csv_to_db_hourly(csv_file_path: str, table_name: str, db_connection: psycopg2.extensions.connection) -> None:
-    """
-    Placeholder for future docstring.
+    The function logs the progress and any errors encountered during the loading process.
     """
 
     # Validate CSV File Path
