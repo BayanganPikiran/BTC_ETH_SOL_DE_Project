@@ -38,7 +38,7 @@ if not API_KEY:
 # Enhanced logging setup
 debug_mode = False  # Set to True for verbose logging
 log_level = logging.DEBUG if debug_mode else logging.INFO
-logging.basicConfig(filename='crypto_data_fetch.log', level=log_level,
+logging.basicConfig(filename='extraction_daily.log', level=log_level,
                     format='%(asctime)s:%(levelname)s:%(funcName)s:%(lineno)d:%(message)s')
 
 BASE_URL = 'https://min-api.cryptocompare.com/data/v2/histoday'
