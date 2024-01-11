@@ -160,7 +160,7 @@ def main(start_date: str, end_date: str) -> None:
     - end_date (str): The end date for fetching data in 'YYYY-MM-DD' format.
     """
     # Logging configuration
-    logging.basicConfig(filename='crypto_data_fetch.log', level=logging.INFO,
+    logging.basicConfig(filename='extraction_hourly.log', level=logging.INFO,
                         format='%(asctime)s:%(levelname)s:%(message)s')
 
     # Start performance monitoring
