@@ -24,7 +24,30 @@ SOL_HOURLY_CSV_PATH = os.getenv('SOL_HOURLY_CSV_PATH')
 DRY_RUN = os.getenv('DRY_RUN', 'False').lower() == 'true'
 
 
+def create_db_connection():
+    """
+    Placeholder for future docstring.
+    """
+    try:
+        connection = psycopg2.connect(
+            host=DB_HOST,
+            user=DB_USER,
+            password=DB_PASSWORD,
+            dbname=DB_NAME,
+            port=int(DB_PORT)
+        )
+        logging.info("Database connection successfully established.")
+        return connection
+    except psycopg2.Error as e:
+        logging.error(f"Error connecting to the PostgreSQL Database: {e}")
+        return None
+
+
 def load_csv_to_db_hourly(csv_file_path: str, table_name: str, db_connection: psycopg2.extensions.connection) -> None:
+    """
+        Placeholder for future docstring.
+    """
+
     try:
         # Validate CSV File Path
         if not os.path.exists(csv_file_path):
@@ -60,5 +83,3 @@ def load_csv_to_db_hourly(csv_file_path: str, table_name: str, db_connection: ps
         if db_connection:
             db_connection.rollback()
         logging.error(f"An unexpected error occurred in load_csv_to_db_hourly: {e}")
-
-
