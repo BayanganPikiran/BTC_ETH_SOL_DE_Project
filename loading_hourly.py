@@ -21,7 +21,6 @@ Author: Andre La Flamme
 Date: January 11, 2024
 """
 
-
 import psycopg2
 import pandas as pd
 from dotenv import load_dotenv
@@ -49,19 +48,20 @@ DRY_RUN = os.getenv('DRY_RUN', 'False').lower() == 'true'
 
 
 def setup_logging() -> None:
-     """
-    Set up logging configuration.
-
-    This function configures logging to output messages both to the console and a log file.
-    It ensures that if the logging configuration is already set, it does not get overwritten.
-
-    Logging Level: INFO
-    Log Format: Timestamp, Log Level, and Message
-    Log File: hourly_loading_script.log (appended mode)
-
-    Returns:
-    None
     """
+   Set up logging configuration.
+
+   This function configures logging to output messages both to the console and a log file.
+   It ensures that if the logging configuration is already set, it does not get overwritten.
+
+   Logging Level: INFO
+   Log Format: Timestamp, Log Level, and Message
+   Log File: hourly_loading_script.log (appended mode)
+
+   Returns:
+   None
+   """
+
     if not logging.getLogger().hasHandlers():
         logging.basicConfig(
             level=logging.INFO,
@@ -185,15 +185,21 @@ if __name__ == '__main__':
     if db_connection is None:
         logging.error("Failed to establish database connection. Exiting script.")
     else:
+        # Updated table names to match the correct ones in the database
         crypto_csv_paths = {
             'BTC': BTC_HOURLY_CSV_PATH,
             'ETH': ETH_HOURLY_CSV_PATH,
             'SOL': SOL_HOURLY_CSV_PATH
         }
+        table_names = {
+            'BTC': 'BTC_Hourly',
+            'ETH': 'ETH_Hourly',
+            'SOL': 'SOL_Hourly'
+        }
 
         for coin_symbol, csv_path in crypto_csv_paths.items():
-            # Include data reading and validation logic here (if separate functions are created)
-            load_csv_to_db_hourly(csv_path, f"{coin_symbol}_hourly_table", db_connection)
+            table_name = table_names[coin_symbol]
+            load_csv_to_db_hourly(csv_path, table_name, db_connection)
 
         # Close the database connection
         db_connection.close()
