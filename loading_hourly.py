@@ -101,3 +101,25 @@ def load_csv_to_db_hourly(csv_file_path: str, table_name: str, db_connection: ps
         if db_connection:
             db_connection.rollback()
         logging.error(f"An unexpected error occurred in load_csv_to_db_hourly: {e}")
+
+if __name__ == '__main__':
+    setup_logging()
+    db_connection = create_db_connection()
+
+    if db_connection is None:
+        logging.error("Failed to establish database connection. Exiting script.")
+    else:
+        crypto_csv_paths = {
+            'BTC': BTC_HOURLY_CSV_PATH,
+            'ETH': ETH_HOURLY_CSV_PATH,
+            'SOL': SOL_HOURLY_CSV_PATH
+        }
+
+        for coin_symbol, csv_path in crypto_csv_paths.items():
+            # Include data reading and validation logic here (if separate functions are created)
+            load_csv_to_db_hourly(csv_path, f"{coin_symbol}_hourly_table", db_connection)
+
+        # Close the database connection
+        db_connection.close()
+        logging.info("Database connection closed.")
+
