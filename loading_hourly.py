@@ -24,6 +24,24 @@ SOL_HOURLY_CSV_PATH = os.getenv('SOL_HOURLY_CSV_PATH')
 DRY_RUN = os.getenv('DRY_RUN', 'False').lower() == 'true'
 
 
+def setup_logging() -> None:
+    """
+    Set up logging configuration.
+    """
+    if not logging.getLogger().hasHandlers():
+        logging.basicConfig(
+            level=logging.INFO,
+            format="%(asctime)s - %(levelname)s - %(message)s",
+            filename="hourly_loading_script.log",
+            filemode="a"
+        )
+        console = logging.StreamHandler()
+        console.setLevel(logging.INFO)
+        formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
+        console.setFormatter(formatter)
+        logging.getLogger("").addHandler(console)
+
+
 def create_db_connection():
     """
     Placeholder for future docstring.
