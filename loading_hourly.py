@@ -28,9 +28,6 @@ import os
 import logging
 from typing import Optional
 
-# Load environment variables from .env
-load_dotenv()
-
 # Database configuration
 DB_HOST = os.getenv('PG_HOST')
 DB_PORT = os.getenv('PG_PORT')
@@ -43,37 +40,20 @@ BTC_HOURLY_CSV_PATH = os.getenv('BTC_HOURLY_CSV_PATH')
 ETH_HOURLY_CSV_PATH = os.getenv('ETH_HOURLY_CSV_PATH')
 SOL_HOURLY_CSV_PATH = os.getenv('SOL_HOURLY_CSV_PATH')
 
+# Constants for logging
+DEBUG_MODE = os.getenv('DEBUG_MODE', 'False').lower() == 'true'
+LOG_LEVEL = logging.DEBUG if DEBUG_MODE else logging.INFO
+LOG_FORMAT = '%(asctime)s - %(levelname)s - %(essage)s'
+LOG_FILE = 'loading_hourly.log'
+
 # Feature flag
-DRY_RUN = os.getenv('DRY_RUN', 'False').lower() == 'true'
+DRY_RUN = os.getenv('DRY_RUN', 'False').lower() == 'false'
 
+# Load environment variables from .env
+load_dotenv()
 
-def setup_logging() -> None:
-    """
-   Set up logging configuration.
-
-   This function configures logging to output messages both to the console and a log file.
-   It ensures that if the logging configuration is already set, it does not get overwritten.
-
-   Logging Level: INFO
-   Log Format: Timestamp, Log Level, and Message
-   Log File: hourly_loading_script.log (appended mode)
-
-   Returns:
-   None
-   """
-
-    if not logging.getLogger().hasHandlers():
-        logging.basicConfig(
-            level=logging.INFO,
-            format="%(asctime)s - %(levelname)s - %(message)s",
-            filename="hourly_loading_script.log",
-            filemode="a"
-        )
-        console = logging.StreamHandler()
-        console.setLevel(logging.INFO)
-        formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
-        console.setFormatter(formatter)
-        logging.getLogger("").addHandler(console)
+# Setup logging
+logging.basicConfig(filename=LOG_FILE, level=LOG_LEVEL, format=LOG_FORMAT)
 
 
 def create_db_connection():
@@ -179,7 +159,7 @@ def load_csv_to_db_hourly(csv_file_path: str, table_name: str, db_connection: ps
 
 
 if __name__ == '__main__':
-    setup_logging()
+
     db_connection = create_db_connection()
 
     if db_connection is None:

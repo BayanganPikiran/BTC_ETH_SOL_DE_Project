@@ -18,7 +18,7 @@ import os
 import logging
 from typing import Optional
 
-load_dotenv()  # Load environment variables from .env
+# Constants
 
 # Database configuration
 DB_HOST = os.getenv('PG_HOST')
@@ -32,8 +32,19 @@ BTC_CSV_PATH = os.getenv('BTC_CSV_PATH')
 ETH_CSV_PATH = os.getenv('ETH_CSV_PATH')
 SOL_CSV_PATH = os.getenv('SOL_CSV_PATH')
 
+# Constants for logging
+DEBUG_MODE = os.getenv('DEBUG_MODE', 'False').lower() == 'true'
+LOG_LEVEL = logging.DEBUG if DEBUG_MODE else logging.INFO
+LOG_FORMAT = '%(asctime)s - %(levelname)s - %(message)s'
+LOG_FILE = 'loading_daily.log'
+
 # Feature flag
 DRY_RUN = os.getenv('DRY_RUN', 'False').lower() == 'true'
+
+load_dotenv()  # Load environment variables from .env
+
+# Setup logging
+logging.basicConfig(filename=LOG_FILE, level=LOG_LEVEL, format=LOG_FORMAT)
 
 
 def create_db_connection() -> Optional[psycopg2.extensions.connection]:
@@ -98,25 +109,8 @@ def load_csv_to_db(csv_file_path: str, table_name: str, db_connection: psycopg2.
         logging.error(f"Error occurred while loading data from {csv_file_path}: {e}")
 
 
-def setup_logging() -> None:
-    """
-    Set up logging configuration.
-    """
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s - %(levelname)s - %(message)s",
-        filename="loading_script.log",
-        filemode="a"
-    )
-    console = logging.StreamHandler()
-    console.setLevel(logging.INFO)
-    formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
-    console.setFormatter(formatter)
-    logging.getLogger("").addHandler(console)
-
-
 if __name__ == "__main__":
-    setup_logging()
+
     logging.info("Starting script execution...")
 
     # Check for dry run mode

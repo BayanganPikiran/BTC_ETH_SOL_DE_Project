@@ -43,10 +43,15 @@ CONVERSION_TYPE_COLUMN = 'conversionType'
 CONVERSION_SYMBOL_COLUMN = 'conversionSymbol'
 BACKUP_DATE_FORMAT = "%Y%m%d_%H%M%S"
 DATE_FORMAT = '%Y-%m-%d'
+
 # Constants for logging
-LOG_LEVEL = logging.INFO
+DEBUG_MODE = os.getenv('DEBUG_MODE', 'False').lower() == 'true'
+LOG_LEVEL = logging.DEBUG if DEBUG_MODE else logging.INFO
 LOG_FORMAT = '%(asctime)s - %(levelname)s - %(message)s'
-LOG_FILE = 'crypto_data_transformation.log'
+LOG_FILE = 'transformation_daily.log'
+
+logging.basicConfig(filename=LOG_FILE, level=LOG_LEVEL, format=LOG_FORMAT)
+logging.basicConfig(filename=LOG_FILE, level=LOG_LEVEL, format=LOG_FORMAT)
 
 
 def clean_sol_data(csv_path: str = 'sol_data.csv') -> NoReturn:
@@ -181,24 +186,7 @@ def transform_crypto_data(csv_path: str, crypto_prefix: str) -> NoReturn:
         raise
 
 
-def setup_logging() -> NoReturn:
-    """
-    Sets up the logging configuration for the script.
-
-    Configures logging to write messages to both a file and the console.
-    Only configures logging if no handlers have been set up previously.
-    """
-    if not logging.getLogger().hasHandlers():
-        logging.basicConfig(level=LOG_LEVEL,
-                            format=LOG_FORMAT,
-                            handlers=[
-                                logging.FileHandler(LOG_FILE),
-                                logging.StreamHandler()
-                            ])
-
-
 if __name__ == '__main__':
-    setup_logging()
 
     # Specify file paths and their respective prefixes
     file_paths_and_prefixes = {

@@ -29,20 +29,25 @@ from dotenv import load_dotenv
 import os
 import traceback  # For detailed error logging
 
+# Constants
+DEBUG_MODE = os.getenv('DEBUG_MODE', 'False').lower() == 'true'
+LOG_LEVEL = logging.DEBUG if DEBUG_MODE else logging.INFO
+LOG_FORMAT = '%(asctime)s - %(levelname)s - %(message)s'
+LOG_FILE = 'extraction_daily.log'
+
+BASE_URL = 'https://min-api.cryptocompare.com/data/v2/histoday'
+MAX_RETRIES = 3  # Maximum number of retries for API requests
+
 load_dotenv()  # Load the API key from the .env file
 
 API_KEY = os.environ.get('CRYPTOCOMPARE_API_KEY')
 if not API_KEY:
     raise ValueError("API key not found. Please set the CRYPTOCOMPARE_API_KEY in the .env file.")
 
-# Enhanced logging setup
-debug_mode = False  # Set to True for verbose logging
-log_level = logging.DEBUG if debug_mode else logging.INFO
-logging.basicConfig(filename='extraction_daily.log', level=log_level,
-                    format='%(asctime)s:%(levelname)s:%(funcName)s:%(lineno)d:%(message)s')
+# Setup logging
+logging.basicConfig(filename=LOG_FILE, level=LOG_LEVEL, format=LOG_FORMAT)
 
-BASE_URL = 'https://min-api.cryptocompare.com/data/v2/histoday'
-MAX_RETRIES = 3  # Maximum number of retries for API requests
+
 
 
 def validate_data(data: Dict) -> bool:

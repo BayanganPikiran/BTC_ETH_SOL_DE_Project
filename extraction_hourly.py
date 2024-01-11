@@ -14,7 +14,6 @@ Usage:
 - Adjust TEST_START_DATE, TEST_END_DATE, FULL_START_DATE, and FULL_END_DATE as needed.
 """
 
-
 import os
 import time
 import logging
@@ -27,6 +26,15 @@ import pandas as pd
 import psutil
 from dotenv import load_dotenv
 
+# Constants
+DEBUG_MODE = os.getenv('DEBUG_MODE', 'False').lower() == 'true'
+LOG_LEVEL = logging.DEBUG if DEBUG_MODE else logging.INFO
+LOG_FORMAT = '%(asctime)s - %(levelname)s - %(message)s'
+LOG_FILE = 'extraction_hourly.log'
+
+# API endpoint for hourly data
+BASE_URL = 'https://min-api.cryptocompare.com/data/v2/histohour'
+MAX_RETRIES = 5  # Maximum number of retries for API requests
 
 # Test run dates (e.g., one week)
 TEST_START_DATE = '2023-01-01'
@@ -37,7 +45,7 @@ FULL_START_DATE = '2020-04-10'
 FULL_END_DATE = '2024-01-03'
 
 # Toggle for test mode
-IS_TEST_MODE = False # Set to False for a full run
+IS_TEST_MODE = False  # Set to False for a full run
 
 load_dotenv()  # Load the API key from the .env file
 
@@ -45,9 +53,8 @@ API_KEY = os.environ.get('CRYPTOCOMPARE_API_KEY')
 if not API_KEY:
     raise ValueError("API key not found. Please set the CRYPTOCOMPARE_API_KEY in the .env file.")
 
-# API endpoint for hourly data
-BASE_URL = 'https://min-api.cryptocompare.com/data/v2/histohour'
-MAX_RETRIES = 5  # Maximum number of retries for API requests
+# Setup logging
+logging.basicConfig(filename=LOG_FILE, level=LOG_LEVEL, format=LOG_FORMAT)
 
 
 def validate_hourly_data(data: Dict) -> bool:

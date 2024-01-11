@@ -36,7 +36,6 @@ Author: Andre La Flamme
 Date: January 10, 2024
 """
 
-
 import pandas as pd
 import os
 import logging
@@ -60,30 +59,13 @@ INPUT_ETH_CSV_PATH = 'ETH_hourly_data.csv'
 INPUT_SOL_CSV_PATH = 'SOL_hourly_data.csv'
 
 # Constants for logging
-LOG_LEVEL = logging.INFO
+DEBUG_MODE = os.getenv('DEBUG_MODE', 'False').lower() == 'true'
+LOG_LEVEL = logging.DEBUG if DEBUG_MODE else logging.INFO
 LOG_FORMAT = '%(asctime)s - %(levelname)s - %(message)s'
-LOG_FILE = 'hourly_crypto_data_transformation.log'
+LOG_FILE = 'transformation_hourly.log'
 
-
-# Function to set up logging
-def setup_logging() -> None:
-    """
-        Sets up the logging configuration for the script.
-
-        Configures logging to write messages to both a file and the console.
-        The log level, format, and file are defined by the constants LOG_LEVEL, LOG_FORMAT, and LOG_FILE.
-        Only configures logging if no handlers have been set up previously.
-
-        Returns:
-        None
-        """
-    if not logging.getLogger().hasHandlers():
-        logging.basicConfig(level=LOG_LEVEL,
-                            format=LOG_FORMAT,
-                            handlers=[
-                                logging.FileHandler(LOG_FILE),
-                                logging.StreamHandler()
-                            ])
+# Setup logging
+logging.basicConfig(filename=LOG_FILE, level=LOG_LEVEL, format=LOG_FORMAT)
 
 
 def read_csv_file(csv_path: str) -> pd.DataFrame:
@@ -317,7 +299,8 @@ def transform_hourly_data(csv_path: str, coin_symbol: str) -> None:
         logging.error(f"No data found in {csv_path} or failed to read file.")
         return
 
-    required_columns = [TIME_COLUMN, HIGH_COLUMN, LOW_COLUMN, OPEN_COLUMN, CLOSE_COLUMN, VOL_NATIVE_COLUMN, VOL_USD_COLUMN]
+    required_columns = [TIME_COLUMN, HIGH_COLUMN, LOW_COLUMN, OPEN_COLUMN, CLOSE_COLUMN, VOL_NATIVE_COLUMN,
+                        VOL_USD_COLUMN]
     numeric_columns = [HIGH_COLUMN, LOW_COLUMN, OPEN_COLUMN, CLOSE_COLUMN]
 
     if not validate_data(data, required_columns, numeric_columns):
@@ -335,7 +318,7 @@ def transform_hourly_data(csv_path: str, coin_symbol: str) -> None:
 
 
 if __name__ == '__main__':
-    setup_logging()
+
     transform_hourly_data(INPUT_BTC_CSV_PATH, 'BTC')
     transform_hourly_data(INPUT_ETH_CSV_PATH, 'ETH')
     transform_hourly_data(INPUT_SOL_CSV_PATH, 'SOL')
