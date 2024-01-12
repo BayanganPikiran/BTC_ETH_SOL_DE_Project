@@ -51,10 +51,9 @@ LOG_FORMAT = '%(asctime)s - %(levelname)s - %(message)s'
 LOG_FILE = 'transformation_daily.log'
 
 logging.basicConfig(filename=LOG_FILE, level=LOG_LEVEL, format=LOG_FORMAT)
-logging.basicConfig(filename=LOG_FILE, level=LOG_LEVEL, format=LOG_FORMAT)
 
 
-def clean_sol_data(csv_path: str = 'sol_data.csv') -> NoReturn:
+def clean_daily_sol_data(csv_path: str = 'sol_data.csv') -> NoReturn:
     """
     Cleans the Solana data CSV file by removing rows where 'high', 'low', 'open', and 'close' are all zero.
     A backup of the original file is created before performing the operation,
@@ -110,7 +109,7 @@ def clean_sol_data(csv_path: str = 'sol_data.csv') -> NoReturn:
         raise
 
 
-def transform_crypto_data(csv_path: str, crypto_prefix: str) -> NoReturn:
+def transform_daily_crypto_data(csv_path: str, crypto_prefix: str) -> NoReturn:
     """
     Transforms cryptocurrency data in a CSV file.
 
@@ -126,6 +125,7 @@ def transform_crypto_data(csv_path: str, crypto_prefix: str) -> NoReturn:
     - Renames 'volumeto' to 'trade_vol_USD' and refactors it to show the full numeric value.
     - Drops the 'conversionType' and 'conversionSymbol' columns.
     - Reorders the columns to the specified format.
+    - Saves the transformed data to a new file with a prefix 'transformed_'.
     """
 
     try:
@@ -174,9 +174,12 @@ def transform_crypto_data(csv_path: str, crypto_prefix: str) -> NoReturn:
         data = data[desired_order]
         logging.info("Columns reordered.")
 
-        # Save the transformed data
-        data.to_csv(csv_path, index=False)
-        logging.info(f"Transformed data saved to {csv_path}")
+        # Create a new filename for the transformed data
+        transformed_csv_path = f'transformed_{crypto_prefix}_daily_data.csv'
+
+        # Save the transformed data to the new file
+        data.to_csv(transformed_csv_path, index=False)
+        logging.info(f"Transformed data saved to {transformed_csv_path}")
 
     except FileNotFoundError as e:
         logging.error(f"File not found error in transform_crypto_data: {e}")
@@ -184,15 +187,18 @@ def transform_crypto_data(csv_path: str, crypto_prefix: str) -> NoReturn:
     except ValueError as e:
         logging.error(f"Data validation error in transform_crypto_data: {e}")
         raise
+    except Exception as e:
+        logging.error(f"Unexpected error in transform_crypto_data: {e}")
+        raise
 
 
 if __name__ == '__main__':
 
     # Specify file paths and their respective prefixes
     file_paths_and_prefixes = {
-        'btc_data.csv': 'BTC',
-        'eth_data.csv': 'ETH',
-        'sol_data.csv': 'SOL'
+        'btc_daily_data.csv': 'BTC',
+        'eth_daily_data.csv': 'ETH',
+        'sol_daily_data.csv': 'SOL'
     }
 
     # Process each file
@@ -200,11 +206,11 @@ if __name__ == '__main__':
         try:
             # Clean data if it's the Solana dataset
             if file_path == 'sol_data.csv':
-                clean_sol_data(file_path)
+                clean_daily_sol_data(file_path)
                 logging.info(f"Data cleaned for {file_path}")
 
             # Transform data for all datasets
-            transform_crypto_data(file_path, prefix)
+            transform_daily_crypto_data(file_path, prefix)
             logging.info(f"Data transformed for {file_path}")
 
         except FileNotFoundError as e:

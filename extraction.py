@@ -38,8 +38,7 @@ LOG_FILE = 'extraction_daily.log'
 BASE_URL = 'https://min-api.cryptocompare.com/data/v2/histoday'
 MAX_RETRIES = 3  # Maximum number of retries for API requests
 
-load_dotenv()  # Load the API key from the .env file
-
+load_dotenv()  # Load the API key from the .env
 API_KEY = os.environ.get('CRYPTOCOMPARE_API_KEY')
 if not API_KEY:
     raise ValueError("API key not found. Please set the CRYPTOCOMPARE_API_KEY in the .env file.")
@@ -48,9 +47,7 @@ if not API_KEY:
 logging.basicConfig(filename=LOG_FILE, level=LOG_LEVEL, format=LOG_FORMAT)
 
 
-
-
-def validate_data(data: Dict) -> bool:
+def validate_daily_data(data: Dict) -> bool:
     """
     Validates whether the required keys are present in a given data record.
 
@@ -69,7 +66,7 @@ def validate_data(data: Dict) -> bool:
     return all(key in data for key in required_keys)
 
 
-def fetch_data(fsym: str, tsym: str, start_date: str, end_date: str = None, limit=2000) -> pd.DataFrame:
+def fetch_daily_data(fsym: str, tsym: str, start_date: str, end_date: str = None, limit=2000) -> pd.DataFrame:
     """
     Fetches historical data for a specified cryptocurrency from the CryptoCompare API.
 
@@ -110,7 +107,7 @@ def fetch_data(fsym: str, tsym: str, start_date: str, end_date: str = None, limi
 
             # Validate each record in the batch
             for record in batch:
-                if not validate_data(record):
+                if not validate_daily_data(record):
                     logging.warning(f"Data validation failed for record: {record}")
                 else:
                     data.append(record)
@@ -130,36 +127,37 @@ def fetch_data(fsym: str, tsym: str, start_date: str, end_date: str = None, limi
     return pd.DataFrame(data)
 
 
-def fetch_all_crypto_data(start_date: str) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
-    """
-    Fetches historical data for Bitcoin (BTC), Ethereum (ETH), and Solana (SOL) from the CryptoCompare API.
+# Other imports and constants remain the same
 
-    This function calls the 'fetch_data' function for each of the three cryptocurrencies (BTC, ETH, and SOL),
-    using a common start date. It returns the historical data for each cryptocurrency as separate pandas DataFrames.
+def fetch_all_daily_crypto_data(start_date: str, end_date: str) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    """
+    Fetches historical data for Bitcoin (BTC), Ethereum (ETH), and Solana (SOL) between start_date and end_date.
 
     Parameters:
     - start_date (str): The start date for fetching data in 'YYYY-MM-DD' format.
+    - end_date (str): The end date for fetching data in 'YYYY-MM-DD' format.
 
     Returns:
-    - Tuple of DataFrames: A tuple containing three pandas DataFrames with historical data for BTC, ETH, and SOL.
+    - Tuple of DataFrames: DataFrames with historical data for BTC, ETH, and SOL.
     """
-    btc_data = fetch_data('BTC', 'USD', start_date)
-    eth_data = fetch_data('ETH', 'USD', start_date)
-    sol_data = fetch_data('SOL', 'USD', start_date)
+    btc_data = fetch_daily_data('BTC', 'USD', start_date, end_date)
+    eth_data = fetch_daily_data('ETH', 'USD', start_date, end_date)
+    sol_data = fetch_daily_data('SOL', 'USD', start_date, end_date)
 
     return btc_data, eth_data, sol_data
 
 
 if __name__ == "__main__":
-    original_start_date = '2020-03-24'
+    start_date = '2020-04-20'
+    end_date = '2024-01-03'
 
     try:
-        btc_data, eth_data, sol_data = fetch_all_crypto_data(original_start_date)
+        btc_data, eth_data, sol_data = fetch_all_daily_crypto_data(start_date, end_date)
         print("Data fetched successfully for BTC, ETH, and SOL.")
 
-        btc_data.to_csv('btc_data.csv', index=False)
-        eth_data.to_csv('eth_data.csv', index=False)
-        sol_data.to_csv('sol_data.csv', index=False)
+        btc_data.to_csv('btc_daily_data.csv', index=False)
+        eth_data.to_csv('eth_daily_data.csv', index=False)
+        sol_data.to_csv('sol_daily_data.csv', index=False)
         print("\nData exported to CSV files in the root directory.")
 
     except Exception as e:

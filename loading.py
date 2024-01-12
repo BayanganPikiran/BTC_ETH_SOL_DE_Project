@@ -18,8 +18,6 @@ import os
 import logging
 from typing import Optional
 
-# Constants
-
 # Database configuration
 DB_HOST = os.getenv('PG_HOST')
 DB_PORT = os.getenv('PG_PORT')
@@ -70,7 +68,7 @@ def create_db_connection() -> Optional[psycopg2.extensions.connection]:
         return None
 
 
-def load_csv_to_db(csv_file_path: str, table_name: str, db_connection: psycopg2.extensions.connection) -> None:
+def load_daily_csv_to_db(csv_file_path: str, table_name: str, db_connection: psycopg2.extensions.connection) -> None:
     """
     Load data from a CSV file into a database table.
     """
@@ -123,9 +121,9 @@ if __name__ == "__main__":
         try:
             # Load data from CSV files into database tables
             # In dry run mode, these operations will not commit any changes to the database
-            load_csv_to_db(BTC_CSV_PATH, 'BTC_daily', db_connection)
-            load_csv_to_db(ETH_CSV_PATH, 'ETH_daily', db_connection)
-            load_csv_to_db(SOL_CSV_PATH, 'SOL_daily', db_connection)
+            load_daily_csv_to_db(BTC_CSV_PATH, 'BTC_daily', db_connection)
+            load_daily_csv_to_db(ETH_CSV_PATH, 'ETH_daily', db_connection)
+            load_daily_csv_to_db(SOL_CSV_PATH, 'SOL_daily', db_connection)
         except Exception as e:
             logging.error(f"An unexpected error occurred: {e}")
         finally:
