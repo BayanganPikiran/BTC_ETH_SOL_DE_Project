@@ -33,6 +33,8 @@ from typing import NoReturn
 import datetime
 
 # Constants
+START_DATE = '2020-04-20'
+END_DATE = '2024-01-03'
 HIGH_COLUMN = 'high'
 LOW_COLUMN = 'low'
 OPEN_COLUMN = 'open'
@@ -111,13 +113,13 @@ def clean_daily_sol_data(csv_path: str = 'sol_data.csv') -> NoReturn:
 
 def transform_daily_crypto_data(csv_path: str, crypto_prefix: str) -> NoReturn:
     """
-    Transforms cryptocurrency data in a CSV file.
+    Transforms and filters cryptocurrency data in a CSV file.
 
     Parameters:
     csv_path (str): Path to the cryptocurrency data CSV file.
     crypto_prefix (str): Prefix for the cryptocurrency (e.g., 'BTC', 'ETH', 'SOL').
 
-    The function performs the following transformations:
+    The function performs the following:
     - Generates a record_id column with the crypto prefix followed by a sequential integer.
     - Adds a coin_symbol column and populates it with the cryptocurrency's symbol.
     - Converts the time column from Unix timestamp to YYYY-MM-DD format and renames it to 'date'.
@@ -125,7 +127,8 @@ def transform_daily_crypto_data(csv_path: str, crypto_prefix: str) -> NoReturn:
     - Renames 'volumeto' to 'trade_vol_USD' and refactors it to show the full numeric value.
     - Drops the 'conversionType' and 'conversionSymbol' columns.
     - Reorders the columns to the specified format.
-    - Saves the transformed data to a new file with a prefix 'transformed_'.
+    - Filters out records outside the specified date range defined by START_DATE and END_DATE.
+    - Saves the transformed and filtered data to a new file with a prefix 'transformed_'.
     """
 
     try:
@@ -173,6 +176,13 @@ def transform_daily_crypto_data(csv_path: str, crypto_prefix: str) -> NoReturn:
                          'trade_vol_native', 'trade_vol_USD']
         data = data[desired_order]
         logging.info("Columns reordered.")
+
+        # Filter data by date range
+        start_datetime = pd.to_datetime(START_DATE)
+        end_datetime = pd.to_datetime(END_DATE)
+        data['date'] = pd.to_datetime(data['date'])
+        data = data[(data['date'] >= start_datetime) & (data['date'] <= end_datetime)]
+        logging.info(f"Data filtered for dates between {START_DATE} and {END_DATE}.")
 
         # Create a new filename for the transformed data
         transformed_csv_path = f'transformed_{crypto_prefix}_daily_data.csv'
