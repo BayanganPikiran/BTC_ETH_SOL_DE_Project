@@ -28,6 +28,9 @@ import os
 import logging
 from typing import Optional
 
+# Load environment variables from .env
+load_dotenv()
+
 # Database configuration
 DB_HOST = os.getenv('PG_HOST')
 DB_PORT = os.getenv('PG_PORT')
@@ -35,7 +38,7 @@ DB_USER = os.getenv('PG_USER')
 DB_PASSWORD = os.getenv('PG_USER_PASSWORD')
 DB_NAME = os.getenv('PG_DB_NAME')
 
-# CSV file paths for hourly data
+# CSV file paths
 BTC_HOURLY_CSV_PATH = os.getenv('BTC_HOURLY_CSV_PATH')
 ETH_HOURLY_CSV_PATH = os.getenv('ETH_HOURLY_CSV_PATH')
 SOL_HOURLY_CSV_PATH = os.getenv('SOL_HOURLY_CSV_PATH')
@@ -48,9 +51,6 @@ LOG_FILE = 'loading_hourly.log'
 
 # Feature flag
 DRY_RUN = os.getenv('DRY_RUN', 'False').lower() == 'false'
-
-# Load environment variables from .env
-load_dotenv()
 
 # Setup logging
 logging.basicConfig(filename=LOG_FILE, level=LOG_LEVEL, format=LOG_FORMAT)
@@ -81,7 +81,7 @@ def create_db_connection():
         return None
 
 
-def read_csv_data(csv_file_path: str) -> Optional[pd.DataFrame]:
+def read_hourly_csv_data(csv_file_path: str) -> Optional[pd.DataFrame]:
     """
      Reads data from a CSV file into a pandas DataFrame.
 
@@ -104,7 +104,8 @@ def read_csv_data(csv_file_path: str) -> Optional[pd.DataFrame]:
         return None
 
 
-def load_csv_to_db_hourly(csv_file_path: str, table_name: str, db_connection: psycopg2.extensions.connection) -> None:
+def load_hourly_csv_to_db_hourly(csv_file_path: str, table_name: str,
+                                 db_connection: psycopg2.extensions.connection) -> None:
     """
     Loads data from a CSV file into a PostgreSQL database table.
 
@@ -128,7 +129,7 @@ def load_csv_to_db_hourly(csv_file_path: str, table_name: str, db_connection: ps
         return
 
     # Read CSV File into DataFrame using the new read_csv_data function
-    data = read_csv_data(csv_file_path)
+    data = read_hourly_csv_data(csv_file_path)
     if data is None or data.empty:
         logging.error(f"Error reading or empty data in the CSV file {csv_file_path}")
         return
@@ -179,7 +180,7 @@ if __name__ == '__main__':
 
         for coin_symbol, csv_path in crypto_csv_paths.items():
             table_name = table_names[coin_symbol]
-            load_csv_to_db_hourly(csv_path, table_name, db_connection)
+            load_hourly_csv_to_db_hourly(csv_path, table_name, db_connection)
 
         # Close the database connection
         db_connection.close()
